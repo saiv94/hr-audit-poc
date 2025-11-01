@@ -1,0 +1,56 @@
+emp_id,emp_name,position,bonus,paygrade,manager_email,job_allocation,investigation_status,leave_days_max_streak
+E1001,Luke Peters,ER Investigator,5000,P3,mgr10@company.com,COMPLIANCE,past_cleared,12
+E1002,James Smith,Operations Lead,4500,P2,mgr03@company.com,OPS,past_cleared,18
+E1002,James Smith,Senior Operations Lead,5500,P3,mgr03@company.com,OPS,past_cleared,18
+E1003,Donna Marquez,HR Business Partner,6000,P4,mgr04@company.com,HR,ongoing,8
+E1004,Deanna Compton,IT Specialist,4000,P2,mgr07@company.com,IT,past_cleared,25
+E1005,David Carter,Operations Lead,4500,P2,mgr10@company.com,OPS,past_flagged,14
+E1006,Rhonda Perez,Operations Lead,3500,P1,mgr07@company.com,,past_cleared,22
+E1007,Terry Beard,Sales Executive,7000,P4,mgr05@company.com,SALES,past_cleared,10
+E1007,Terry Beard,Sales Executive,8500,P4,mgr05@company.com,SALES,past_cleared,10
+E1008,David Dorsey,HR Business Partner,5500,P3,mgr08@company.com,HR,ongoing,16
+E1009,Angela Nguyen,ER Investigator,4800,P3,mgr06@company.com,COMPLIANCE,past_cleared,9
+E1010,Victoria Evans,ER Investigator,5000,P3,mgr02@company.com,COMPLIANCE,past_flagged,11
+E1011,Gregory Roy,Finance Analyst,5200,P3,mgr06@company.com,FIN,past_cleared,15
+E1012,Kenneth Choi,Finance Analyst,4900,P2,mgr01@company.com,FIN,past_cleared,19
+E1013,Brittany Dixon,Sales Executive,7500,P4,mgr04@company.com,SALES,ongoing,7
+E1014,Rita Gilbert,HR Business Partner,6200,P4,mgr05@company.com,HR,past_cleared,13
+E1014,Rita Gilbert,Senior HR Partner,7200,P5,mgr05@company.com,HR,past_cleared,13
+E1015,Jackie Rodriguez,HR Business Partner,5800,P3,mgr02@company.com,HR,past_cleared,17
+E1016,Tyler Turner,HR Business Partner,6000,P4,mgr02@company.com,HR,past_cleared,20
+E1017,Alyssa Hill,Operations Lead,4700,P2,mgr08@company.com,OPS,ongoing,6
+E1018,Brian Howell,IT Specialist,4100,P2,mgr09@company.com,IT,past_cleared,23
+E1019,Michael Savage,Sales Executive,8000,P5,mgr04@company.com,SALES,past_cleared,12
+E1020,James Edwards,IT Specialist,3900,P1,mgr03@company.com,IT,past_flagged,27
+E1021,Rita Robinson,Finance Analyst,5100,P3,mgr10@company.com,FIN,past_cleared,14
+E1022,Nichole Mckenzie,HR Business Partner,5900,P3,mgr08@company.com,HR,ongoing,10
+E1023,Lindsay Cain,HR Business Partner,6100,P4,mgr10@company.com,HR,past_cleared,8
+E1024,Matthew Hayden,Operations Lead,4600,P2,mgr07@company.com,OPS,past_cleared,21
+E1025,Hannah Ayala,HR Business Partner,5700,P3,mgr03@company.com,UNKNOWN,past_cleared,15
+E1026,Tim Livingston,HR Business Partner,6000,P4,mgr06@company.com,HR,ongoing,9
+E1027,Brianna Waters,IT Specialist,4200,P2,mgr07@company.com,IT,past_cleared,11
+E1028,Kimberly Moon,IT Specialist,4300,P2,mgr08@company.com,IT,past_cleared,13
+E1029,Shawn Thomas,Operations Lead,4800,P2,mgr08@company.com,OPS,past_cleared,18
+E1030,Teresa Kaiser,HR Business Partner,6300,P4,mgr09@company.com,HR,ongoing,7
+E1031,Daniel Ruiz,Finance Analyst,5000,P3,mgr02@company.com,FIN,past_cleared,16
+E1032,Michael Bowen,Operations Lead,4900,P2,mgr07@company.com,OPS,past_cleared,14
+E1033,Carrie Miller,HR Business Partner,5800,P3,mgr07@company.com,,past_flagged,12
+E1034,Suzanne Mcknight,Operations Lead,4700,P2,mgr08@company.com,OPS,past_cleared,19
+E1035,Kirk Moore,IT Specialist,4400,P2,mgr01@company.com,IT,past_cleared,8
+E1035,Kirk Moore,IT Specialist,3900,P2,mgr01@company.com,IT,past_cleared,8
+E1036,Steven Gomez,Finance Analyst,5300,P3,mgr04@company.com,FIN,ongoing,10
+E1037,Samantha Mcmillan,Operations Lead,4600,P2,mgr02@company.com,OPS,past_cleared,15
+E1038,Matthew Williams,ER Investigator,4900,P3,mgr09@company.com,COMPLIANCE,past_cleared,11
+E1039,Elizabeth Foster,ER Investigator,5100,P3,mgr01@company.com,COMPLIANCE,past_flagged,9
+E1040,Ryan Martin,ER Investigator,5200,P3,mgr09@company.com,COMPLIANCE,past_cleared,24
+E1041,Douglas Johnson,HR Business Partner,6100,P4,mgr05@company.com,HR,past_cleared,7
+E1042,Rachel Rodriguez,IT Specialist,4000,P2,mgr10@company.com,IT,past_cleared,13
+E1043,Melissa Daniel,ER Investigator,4950,P3,mgr09@company.com,COMPLIANCE,ongoing,6
+E1044,Kevin Chang,IT Specialist,4100,P2,mgr06@company.com,IT,past_cleared,17
+E1045,James Martin,IT Specialist,4200,P2,mgr10@company.com,IT,past_cleared,14
+E1046,Holly Griffin,ER Investigator,5000,P3,mgr04@company.com,COMPLIANCE,past_cleared,8
+E1046,Holly Griffin,ER Investigator,6200,P3,mgr04@company.com,COMPLIANCE,past_cleared,8
+E1047,Nancy Brewer,Finance Analyst,5400,P3,mgr04@company.com,FIN,past_cleared,12
+E1048,Charles Shaw,Sales Executive,7800,P4,mgr02@company.com,SALES,ongoing,10
+E1049,Eric Jarvis,Finance Analyst,5100,P3,mgr02@company.com,FIN,past_cleared,16
+E1050,Nicholas Ferrell,IT Specialist,3950,P1,mgr06@company.com,IT,past_flagged,28
