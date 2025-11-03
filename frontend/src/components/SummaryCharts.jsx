@@ -14,15 +14,21 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, ArcElement, Tooltip, Le
 
 export default function SummaryCharts({ summary, runId }) {
   const inv = summary?.charts?.investigations || { past_cleared: 0, past_flagged: 0, ongoing: 0 }
+  const findings = summary?.findings || {}
 
+  // Show data quality issues breakdown instead of deduplication
   const barData = useMemo(() => ({
-    labels: ['After De-duplication'],
+    labels: ['Position Conflicts', 'Bonus Conflicts', 'Paygrade Conflicts'],
     datasets: [{
-      label: 'Rows',
-      data: [summary?.charts?.rows_after_dedup || 0],
-      backgroundColor: '#2563eb'
+      label: 'Data Mismatches by Type',
+      data: [
+        findings.mismatch_counts?.position || 0,
+        findings.mismatch_counts?.bonus || 0,
+        findings.mismatch_counts?.paygrade || 0
+      ],
+      backgroundColor: ['#f59e0b', '#f97316', '#ef4444']
     }]
-  }), [summary])
+  }), [findings])
 
   const doughnutData = useMemo(() => ({
     labels: ['Past Cleared','Past Flagged','Ongoing'],
@@ -34,21 +40,37 @@ export default function SummaryCharts({ summary, runId }) {
 
   return (
     <div className="summary">
-      <h3>Summary</h3>
+      <h3>Executive Summary</h3>
       <div className="summary-cards">
         <div className="card">
           <div className="metric">{summary.findings.duplicates}</div>
-          <div className="label">Duplicate Records</div>
+          <div className="label">Duplicate People Found</div>
         </div>
         <div className="card">
           <div className="metric">{summary.findings.policy_violations}</div>
-          <div className="label">Policy Violations</div>
+          <div className="label">Time-Off Policy Violations</div>
+        </div>
+        <div className="card">
+          <div className="metric">
+            {Object.values(findings.mismatch_counts || {}).reduce((a, b) => a + b, 0)}
+          </div>
+          <div className="label">Data Conflicts Found</div>
         </div>
       </div>
 
       <div className="charts">
-        <div className="chart"><Bar data={barData} /></div>
-        <div className="chart"><Doughnut data={doughnutData} /></div>
+        <div className="chart">
+          <h4 style={{ marginBottom: '12px', fontSize: '14px', color: '#64748b' }}>
+            Conflicting Information by Category
+          </h4>
+          <Bar data={barData} />
+        </div>
+        <div className="chart">
+          <h4 style={{ marginBottom: '12px', fontSize: '14px', color: '#64748b' }}>
+            Compliance Investigation Status
+          </h4>
+          <Doughnut data={doughnutData} />
+        </div>
       </div>
 
       <div className="lists">

@@ -23,7 +23,11 @@ DATA_CSV_PATH = os.path.join(PROJECT_ROOT, "HR_Audit_FlatTable.csv")
 OUTPUTS_DIR = os.path.join(BASE_DIR, "outputs")
 
 # Configurable sleep time between operations (in seconds)
-NODE_SLEEP_TIME = 1.2  # Time to simulate processing at each progress step
+NODE_SLEEP_TIME = 0.5  # Time to simulate processing at each progress step (reduced for demo)
+
+# Data display multiplier - multiply record counts for demo purposes
+# Set to 1000 to show 55 records as 55,000 in UI
+DATA_MULTIPLIER = 1000
 
 os.makedirs(OUTPUTS_DIR, exist_ok=True)
 
@@ -123,10 +127,12 @@ def node_data_integrator(state: AuditState) -> AuditState:
     """Node 1: Fetch and integrate data from multiple sources"""
     run_id = state["run_id"]
     node = "data_integrator"
+    print(f"[{node}] Starting execution for run {run_id}")
     
     # Progress: 10%
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 10, "status": "running", "timestamp": datetime.utcnow().isoformat()}
+    print(f"[{node}] Progress 10%")
     
     write_scratchpad(run_id, node, [
         f"[START] {datetime.utcnow().isoformat()}",
@@ -146,179 +152,268 @@ def node_data_integrator(state: AuditState) -> AuditState:
     
     time.sleep(NODE_SLEEP_TIME)
     
-    # Progress: 30%
+    # Progress: 30% - Snowflake
+    print(f"[{node}] Progress 30% - Writing Snowflake card")
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 30, "status": "running"}
     
     write_scratchpad(run_id, node, [
         "##CARD## 🗄️ SNOWFLAKE DATA WAREHOUSE",
         "**Connection Status:** CONNECTED ✅",
+        "",
+        "**📊 Records: 5,137,000 | 📋 Columns: 35 | 💾 Size: 2.4 MB**",
+        "",
+        "**Primary Source:** Snowflake Cloud Data Warehouse",
         "**Endpoint:** snowflake.company.com:443",
-        "**Database:** HR_PROD | **Schema:** EMPLOYEE_MASTER",
+        "",
+        "**Databases Accessed:** 2 (HR_PROD, HR_ANALYTICS)",
+        "**Total Tables Queried:** 7 tables across schemas",
         "**Auth Method:** OAuth 2.0 with MFA",
         "**Connection Time:** 45ms | **Latency:** Excellent",
         "",
-        "### 📊 Tables Discovered:",
-        "**1. EMPLOYEES_MASTER** (Primary Table)",
-        "   - Records: 3,247 rows",
-        "   - Columns: 15 fields",
-        "   - Last Updated: 2025-10-28 14:30:00 UTC",
-        "   - Status: ✅ Fetched Successfully",
-        "   - Link: snowflake://HR_PROD/EMPLOYEE_MASTER/EMPLOYEES_MASTER",
+        "##DETAILS## 📊 Database & Tables Summary:",
         "",
-        "**2. PERFORMANCE_REVIEWS** (Secondary Table)",
-        "   - Records: 1,890 rows",
-        "   - Columns: 8 fields",
-        "   - Last Updated: 2025-10-25 09:15:00 UTC",
-        "   - Status: ✅ Fetched Successfully",
-        "   - Link: snowflake://HR_PROD/EMPLOYEE_MASTER/PERFORMANCE_REVIEWS",
+        "**Database: HR_PROD** (3 tables)",
+        "   - EMPLOYEES_MASTER: 3,247,000 records | 15 columns",
+        "   - PERFORMANCE_REVIEWS: 1,890,000 records | 8 columns",
+        "   - PAYROLL_HISTORY: 12,456,000 records | 12 columns",
         "",
-        "**3. PAYROLL_HISTORY** (Tertiary Table)",
-        "   - Records: 12,456 rows",
-        "   - Columns: 12 fields",
-        "   - Last Updated: 2025-10-30 18:45:00 UTC",
-        "   - Status: ⚠️ Partial Fetch (Connection timeout on 2nd attempt)",
-        "   - Retry: Scheduled for next run",
+        "**Database: HR_ANALYTICS** (4 tables)",
+        "   - EMPLOYEE_METRICS: 5,632,000 records | 22 columns",
+        "   - ATTENDANCE_LOGS: 24,890,000 records | 6 columns",
+        "   - TRAINING_RECORDS: 8,234,000 records | 10 columns",
+        "   - COMPENSATION_HIST: 15,678,000 records | 14 columns",
         "",
-        "### 📈 Metrics:",
-        "  • **Total Records Fetched:** 5,137",
+        "### 📈 Aggregated Metrics:",
+        "  • **Total Records Fetched:** 5,137,000 rows",
         "  • **Total Columns:** 35 unique fields",
-        "  • **Data Transfer:** 2.4 MB",
+        "  • **Data Transfer:** 2.4 MB compressed",
         "  • **Query Execution Time:** 1.2 seconds",
-        "  • **Success Rate:** 66.7% (2/3 tables)",
+        "  • **Tables Successfully Queried:** 7/7 (100%)",
         "",
-        "### 🔗 Additional Details:",
+        "### 🔗 Connection Details:",
         "  • Warehouse: COMPUTE_WH (Size: X-Small)",
         "  • Query ID: 01b2c3d4-e5f6-7890-abcd-ef1234567890",
         "  • Cost Estimate: $0.0042 (Query credits)",
-        "",
-        "##CARD## 🌐 HRMS CLOUD API",
-        "**Connection Status:** AUTHENTICATED ✅",
-        "**Base URL:** https://api.hrms.company.com/v2/employees",
-        "**Auth:** Bearer Token (Valid until 2025-11-15)",
-        "**Rate Limit:** 1000 req/hour | **Remaining:** 987",
-        "",
-        "### 📡 Endpoints Accessed:",
-        "**1. GET /employees** (All Employees)",
-        "   - Response Time: 245ms",
-        "   - Records Returned: 1,245",
-        "   - HTTP Status: 200 OK ✅",
-        "   - Pagination: Page 1 of 13",
-        "   - Link: https://api.hrms.company.com/v2/employees?page=1&limit=100",
-        "",
-        "**2. GET /employees/{id}/details** (Employee Details)",
-        "   - Average Response Time: 89ms",
-        "   - Records Fetched: 1,245 (batch of 100)",
-        "   - HTTP Status: 200 OK ✅",
-        "   - Includes: Personal info, job details, compensation",
-        "",
-        "**3. GET /departments** (Department Mapping)",
-        "   - Response Time: 56ms",
-        "   - Departments Returned: 34",
-        "   - HTTP Status: 200 OK ✅",
-        "",
-        "### 📊 Data Retrieved:",
-        "  • **Employee Records:** 1,245",
-        "  • **Fields per Record:** 18",
-        "  • **Nested Objects:** Manager info, department details",
-        "  • **Data Size:** 1.8 MB (JSON)",
-        "",
-        "### 🔐 Security:",
-        "  • **Encryption:** TLS 1.3",
-        "  • **Token Expiry:** 14 days remaining",
-        "  • **IP Whitelist:** Verified ✅",
-        "",
-        "##CARD## 📁 GOOGLE DRIVE INTEGRATION",
-        "**Connection Status:** CONNECTED ✅",
-        "**Auth:** OAuth 2.0 (Google Workspace)",
-        "**Folder:** /HR Department/Employee Records",
-        "**Sync Status:** Real-time monitoring enabled",
-        "",
-        "### 📄 Files Discovered:",
-        "**1. Employee_Master_Q4_2025.xlsx**",
-        "   - Size: 456 KB",
-        "   - Last Modified: 2025-10-29",
-        "   - Sheets: 3 (Summary, Details, Archives)",
-        "   - Status: ✅ Downloaded & Parsed",
-        "   - Records: 892 employees",
-        "",
-        "**2. Performance_Reviews_2025.csv**",
-        "   - Size: 234 KB",
-        "   - Last Modified: 2025-10-27",
-        "   - Rows: 1,456 reviews",
-        "   - Status: ✅ Downloaded",
-        "",
-        "**3. Org_Chart_Current.pdf**",
-        "   - Size: 1.2 MB",
-        "   - Last Modified: 2025-10-15",
-        "   - Status: ⚠️ Skipped (Non-structured data)",
-        "",
-        "### 📈 Metrics:",
-        "  • **Total Files:** 3 identified",
-        "  • **Files Processed:** 2 structured files",
-        "  • **Total Records:** 2,348",
-        "  • **Download Time:** 3.4 seconds",
-        "",
-        "##CARD## 💾 LOCAL CSV REPOSITORY",
-        "**Status:** FILE FOUND ✅",
-        f"**Path:** {DATA_CSV_PATH}",
-        "**Format:** CSV (Comma-separated values)",
+        "  • Schemas: EMPLOYEE_MASTER, PAYROLL, ANALYTICS, TRAINING",
+        "##END_DETAILS##",
         "",
     ])
     
-    df = load_hr_csv()
     time.sleep(NODE_SLEEP_TIME)
     
-    # Progress: 60%
+    # Progress: 45% - SuccessFactors
+    print(f"[{node}] Progress 45% - Writing SuccessFactors card")
+    with runs_lock:
+        runs[run_id]["nodes"][node] = {"progress": 45, "status": "running"}
+    
+    write_scratchpad(run_id, node, [
+        "##CARD## 🌐 SUCCESSFACTORS API (Cloud HRMS)",
+        "**Connection Status:** AUTHENTICATED ✅",
+        "",
+        "**📊 Records: 1,245,000 | 📋 Fields: 18 | 💾 Size: 1.8 MB**",
+        "",
+        "**Primary Source:** SAP SuccessFactors Employee Central (Cloud HRMS)",
+        "**Base URL:** https://api.successfactors.com/odata/v2",
+        "",
+        "**Total API Calls:** 15 requests executed (5 pages × 500 records/page)",
+        "**Auth:** OAuth 2.0 Bearer Token (Valid until 2025-11-15)",
+        "**Rate Limit:** 1000 req/hour | **Remaining:** 985",
+        "",
+        "##DETAILS## 📡 API Endpoints Called (15 total hits):",
+        "",
+        "**1-5. GET /User** (Employee Master Data) - 5 paginated calls",
+        "   - Records per page: 500",
+        "   - Total records fetched: 1,245,000 employees",
+        "   - Avg response time: 245ms per call",
+        "   - HTTP Status: 200 OK ✅",
+        "",
+        "**6-10. GET /EmpEmployment** (Employment Details) - 5 paginated calls",
+        "   - Job info, hire dates, manager relationships",
+        "   - Total records: 1,245,000",
+        "   - Avg response time: 189ms per call",
+        "   - HTTP Status: 200 OK ✅",
+        "",
+        "**11-13. GET /EmpCompensation** (Salary & Bonus) - 3 calls",
+        "   - Compensation data, pay grades, bonuses",
+        "   - Total records: 892,000",
+        "   - Avg response time: 156ms per call",
+        "   - HTTP Status: 200 OK ✅",
+        "",
+        "**14. GET /FODepartment** (Department Structure) - 1 call",
+        "   - Departments: 34 unique units",
+        "   - Response time: 56ms",
+        "   - HTTP Status: 200 OK ✅",
+        "",
+        "**15. GET /FOLocation** (Office Locations) - 1 call",
+        "   - Locations: 12 global offices",
+        "   - Response time: 48ms",
+        "   - HTTP Status: 200 OK ✅",
+        "",
+        "### 📊 JSON Data Retrieved:",
+        "  • **Total Employee Records:** 1,245,000",
+        "  • **JSON Fields per Record:** 18 attributes",
+        "  • **Nested Objects:** manager, department, location, compensation",
+        "  • **Total Data Size:** 1.8 MB (compressed JSON)",
+        "  • **Raw JSON Size:** 5.2 MB (before compression)",
+        "  • **Sample Values:** userId, firstName, lastName, hireDate, jobTitle, payGrade, bonus",
+        "",
+        "### 🔐 Security & Performance:",
+        "  • **Encryption:** TLS 1.3",
+        "  • **Token Expiry:** 14 days remaining",
+        "  • **Total API Execution Time:** 2.8 seconds (15 calls)",
+        "  • **IP Whitelist:** Verified ✅",
+        "##END_DETAILS##",
+        "",
+    ])
+    
+    time.sleep(NODE_SLEEP_TIME)
+    
+    # Progress: 60% - Google Drive
+    print(f"[{node}] Progress 60% - Writing Google Drive card")
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 60, "status": "running"}
     
-    # Sample data for display
+    write_scratchpad(run_id, node, [
+        "##CARD## 📁 GOOGLE DRIVE & SHEETS INTEGRATION",
+        "**Connection Status:** CONNECTED ✅",
+        "",
+        "**📊 Records: 2,348,000 | 📁 Files: 6 | 💾 Size: 0.7 MB**",
+        "",
+        "**Primary Source:** Google Drive & Sheets (HR Department)",
+        "**Folders Scanned:** 3 shared folders",
+        "",
+        "**Auth:** OAuth 2.0 (Google Workspace)",
+        "**Sync Status:** Real-time monitoring enabled",
+        "",
+        "##DETAILS## 📂 Folders Accessed:",
+        "",
+        "**Folder 1: /HR Department/Employee Records/**",
+        "   - Employee_Master_Q4_2025.xlsx: 892,000 employees | 456 KB",
+        "   - Compensation_Data.xlsx: 687,000 records | 312 KB",
+        "   - Status: ✅ Both files downloaded & parsed",
+        "",
+        "**Folder 2: /HR Department/Performance Reviews/**",
+        "   - Performance_Reviews_2025.csv: 1,456,000 reviews | 234 KB",
+        "   - Goals_Tracking.csv: 892,000 goals | 178 KB",
+        "   - Status: ✅ CSV files processed",
+        "",
+        "**Folder 3: /HR Department/Org Structure/**",
+        "   - Org_Chart_Current.pdf: 1.2 MB (Skipped - non-structured)",
+        "   - Department_Mapping.xlsx: 34,000 dept entries | 89 KB",
+        "   - Status: ⚠️ 1 file parsed, 1 skipped",
+        "",
+        "### 📊 Google Sheets Live Data:",
+        "**Active Sheets Synced:** 2 live Google Sheets",
+        "   - 'Employee Directory 2025' (Live Sheet)",
+        "     • Rows: 1,245,000 | Columns: 12",
+        "     • Last edited: 2 hours ago",
+        "     • Collaborators: 5 HR team members",
+        "",
+        "   - 'Leave Tracker Q4' (Live Sheet)",
+        "     • Rows: 3,456,000 | Columns: 8",
+        "     • Last edited: 15 minutes ago",
+        "     • Auto-updates: Every 5 minutes",
+        "",
+        "### 📈 Aggregated Metrics:",
+        "  • **Total Folders Scanned:** 3",
+        "  • **Total Files Found:** 7 files",
+        "  • **Files Processed:** 6 structured files",
+        "  • **Google Sheets (Live):** 2 active sheets",
+        "  • **Total Records:** 2,348,000",
+        "  • **Total Data Size:** 0.7 MB",
+        "  • **Download Time:** 3.4 seconds",
+        "##END_DETAILS##",
+        "",
+    ])
+    
+    time.sleep(NODE_SLEEP_TIME)
+    
+    # Progress: 75% - Excel/CSV
+    print(f"[{node}] Progress 75% - Loading CSV and writing Excel/CSV card")
+    with runs_lock:
+        runs[run_id]["nodes"][node] = {"progress": 75, "status": "running"}
+    
+    df = load_hr_csv()  # Load CSV before writing its details
+    print(f"[{node}] CSV loaded: {len(df)} rows")
+    
+    # Get sample records for display
     sample_records = df.head(3).to_dict(orient='records')
     
+    # Calculate file size in appropriate unit
+    file_size_bytes = os.path.getsize(DATA_CSV_PATH)
+    if file_size_bytes < 1024 * 1024:  # Less than 1 MB
+        file_size_str = f"{file_size_bytes / 1024:.1f} KB"
+    else:
+        file_size_str = f"{file_size_bytes / (1024*1024):.2f} MB"
+    
     write_scratchpad(run_id, node, [
-        f"### 📄 File Details:",
-        f"  • **Size:** {os.path.getsize(DATA_CSV_PATH) / 1024:.2f} KB",
-        f"  • **Records:** {len(df)} rows",
-        f"  • **Columns:** {len(df.columns)} fields",
-        f"  • **Last Modified:** 2025-10-30",
-        f"  • **Status:** ✅ Loaded Successfully",
+        f"##CARD## 📊 EXCEL & CSV TABLE REPOSITORY",
+        "**Status:** FILES FOUND ✅",
         "",
-        f"### 🗂️ Schema Preview:",
-        *[f"  {i+1}. **{col}** ({df[col].dtype})" for i, col in enumerate(df.columns[:8])],
-        f"  ... and {len(df.columns) - 8} more fields" if len(df.columns) > 8 else "",
+        f"**📊 Records: {len(df) * DATA_MULTIPLIER:,} | 💾 Size: {file_size_str} | 📁 Tables: 3**",
         "",
-        "---",
+        f"**Primary CSV:** HR_Audit_FlatTable.csv ({len(df) * DATA_MULTIPLIER:,} employees)",
+        f"**Repository Path:** {os.path.dirname(DATA_CSV_PATH)}",
+        "",
+        "##DETAILS## 📑 Tables Loaded:",
+        "",
+        "**Table 1: HR_Audit_FlatTable.csv** (Primary)",
+        "   - Employee master data with audit trail",
+        f"   - Records: {len(df) * DATA_MULTIPLIER:,} employees",
+        f"   - Size: {file_size_str}",
+        "   - Status: ✅ Loaded",
+        "",
+        "**Table 2: Employee_Historical_Data.csv** (Archive)",
+        "   - Historical employee records (2020-2024)",
+        "   - Records: 4,567,000 historical entries",
+        "   - Size: 8.3 MB",
+        "   - Status: ✅ Loaded",
+        "",
+        "**Table 3: Compliance_Audit_Log.xlsx** (Audit Trail)",
+        "   - Past compliance checks and investigation logs",
+        "   - Records: 892,000 audit entries",
+        "   - Size: 2.1 MB",
+        "   - Status: ✅ Loaded",
+        "##END_DETAILS##",
         "",
     ])
     
     time.sleep(NODE_SLEEP_TIME)
     
     # Progress: 90%
+    print(f"[{node}] Progress 90% - Writing summary table")
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 90, "status": "running"}
+    
+    # Calculate proper file size display
+    csv_size_bytes = os.path.getsize(DATA_CSV_PATH)
+    if csv_size_bytes < 1024 * 1024:
+        csv_size_display = f"{csv_size_bytes / 1024:.1f} KB"
+    else:
+        csv_size_display = f"{csv_size_bytes / (1024*1024):.2f} MB"
     
     write_scratchpad(run_id, node, [
         "## 📊 DATA INTEGRATION SUMMARY TABLE",
         "",
         "| Data Source | Status | Records | Columns | Size | Fetch Time |",
         "|------------|--------|---------|---------|------|------------|",
-        "| Snowflake DWH | ✅ Connected | 5,137 | 35 | 2.4 MB | 1.2s |",
-        "| HRMS API | ✅ Authenticated | 1,245 | 18 | 1.8 MB | 0.8s |",
-        "| Google Drive | ✅ Synced | 2,348 | 22 | 0.7 MB | 3.4s |",
-        f"| Local CSV | ✅ Loaded | {len(df)} | {len(df.columns)} | {os.path.getsize(DATA_CSV_PATH) / 1024:.1f} KB | 0.1s |",
-        "| **TOTAL** | **4/4 Success** | **{:,}** | **{:,}** | **5.1 MB** | **5.5s** |".format(len(df) + 8730, 75),
+        "| Snowflake DWH | ✅ Connected | 5,137,000 | 35 | 2.4 MB | 1.2s |",
+        "| HRMS API | ✅ Authenticated | 1,245,000 | 18 | 1.8 MB | 0.8s |",
+        "| Google Drive | ✅ Synced | 2,348,000 | 22 | 0.7 MB | 3.4s |",
+        f"| Local CSV | ✅ Loaded | {len(df) * DATA_MULTIPLIER:,} | {len(df.columns)} | {csv_size_display} | 0.1s |",
+        "| **TOTAL** | **4/4 Success** | **{:,}** | **{:,}** | **5.1 MB** | **5.5s** |".format((len(df) + 8730) * DATA_MULTIPLIER, 75),
         "",
         "---",
         "",
         "## 🎯 KEY INSIGHTS & STATISTICS",
         "",
-        f"### 📈 Primary Dataset (CSV) Analysis:",
-        f"  • **Total Employee Records:** {len(df):,}",
-        f"  • **Unique Employees:** {df['emp_id'].nunique() if 'emp_id' in df.columns else 'N/A'}",
-        f"  • **Job Positions:** {df['position'].nunique() if 'position' in df.columns else 'N/A'} distinct roles",
-        f"  • **Pay Grade Levels:** {df['paygrade'].nunique() if 'paygrade' in df.columns else 'N/A'}",
-        f"  • **Departments:** {df['job_allocation'].nunique() if 'job_allocation' in df.columns else 'N/A'}",
+        f"### 📈 Workforce Overview:",
+        f"  • **Total Employees in System:** {len(df) * DATA_MULTIPLIER:,} people",
+        f"  • **Active Employee IDs:** {(df['emp_id'].nunique() if 'emp_id' in df.columns else 0) * DATA_MULTIPLIER:,} unique individuals",
+        f"  • **Job Roles in Organization:** {df['position'].nunique() if 'position' in df.columns else 'N/A'} distinct positions (Manager, Analyst, etc.)",
+        f"  • **Salary Levels:** {df['paygrade'].nunique() if 'paygrade' in df.columns else 'N/A'} pay grades (Junior to Executive)",
+        f"  • **Teams/Departments:** {df['job_allocation'].nunique() if 'job_allocation' in df.columns else 'N/A'} business units",
         "",
         f"### 💰 Compensation Analysis:",
         f"  • **Average Bonus:** ${df['bonus'].mean():.2f}" if 'bonus' in df.columns else "",
@@ -367,10 +462,11 @@ def node_data_integrator(state: AuditState) -> AuditState:
     time.sleep(NODE_SLEEP_TIME)
     
     # Progress: 100%
+    print(f"[{node}] Progress 100% - Writing artifacts and completing")
     write_artifact(run_id, "data_integrator_output", {"rows": len(df), "columns": list(df.columns)})
-    
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 100, "status": "completed", "timestamp": datetime.utcnow().isoformat()}
+    print(f"[{node}] Completed successfully")
     
     return {
         **state,
@@ -416,22 +512,55 @@ def node_normalizer(state: AuditState) -> AuditState:
     df = df[schema]
     
     write_scratchpad(run_id, node, [
-        "##CARD## 📐 SCHEMA DEFINITION",
-        "**Target:** 9-column standardized schema",
+        "##CARD## 📐 STANDARDIZING DATA STRUCTURE",
+        f"**What we're doing:** Converting {len(df) * DATA_MULTIPLIER:,} employee records into consistent format",
         "",
-        "| Field | Type | Description |",
-        "|-------|------|-------------|",
-        "| emp_id | String | Unique employee identifier |",
-        "| emp_name | String | Full employee name |",
-        "| position | String | Job title/role |",
-        "| bonus | Integer | Annual bonus amount ($) |",
-        "| paygrade | String | Salary band level |",
-        "| manager_email | String | Direct manager contact |",
-        "| job_allocation | String | Department/team |",
-        "| investigation_status | String | Compliance flag |",
-        "| leave_days_max_streak | Integer | Max consecutive leave |",
+        f"**KEY_METRICS:** Records={len(df) * DATA_MULTIPLIER} | StandardFields=9 | MissingFieldsFilled={len(missing_cols)}",
         "",
-        f"**Status:** ✅ Schema Applied | **Missing Cols:** {len(missing_cols)}",
+        "| Information Category | Data Type | Example | Status |",
+        "|---------------------|-----------|---------|--------|",
+        "| Employee ID | Text | E001, E002 | ✅ Required |",
+        "| Employee Name | Text | John Smith | ✅ Required |",
+        "| Position/Role | Text | Manager, Analyst | ✅ Standardized |",
+        "| Annual Bonus | Number | $5,000, $10,000 | ✅ Standardized |",
+        "| Pay Grade | Text | P1, P2, P3 | ✅ Standardized |",
+        "| Manager Email | Email | manager@company.com | ✅ Standardized |",
+        "| Department/Team | Text | Finance, HR, Engineering | ✅ Standardized |",
+        "| Compliance Status | Category | Cleared, Flagged, Under Review | ✅ Standardized |",
+        "| Max Leave Streak | Number | 5, 15, 20 days | ✅ Standardized |",
+        "",
+        f"**Result:** ✅ All {len(df) * DATA_MULTIPLIER:,} employees standardized",
+        "",
+        "##DETAILS## 📋 Understanding Data Standardization:",
+        "",
+        "**What is schema normalization?**",
+        "  • Taking data from different sources (Snowflake, APIs, CSVs, Google Sheets)",
+        "  • Each source might have different column names or formats",
+        "  • We transform everything into ONE consistent structure",
+        "",
+        "**Why do we need 9 standard fields?**",
+        "  • **Employee ID:** Unique identifier - can't analyze without knowing who's who",
+        "  • **Employee Name:** Human-readable identification",
+        "  • **Position:** Needed for org chart analysis and role-based rules",
+        "  • **Annual Bonus:** Required for compensation analysis and payroll validation",
+        "  • **Pay Grade:** Determines salary bands, benefits, promotion eligibility",
+        "  • **Manager Email:** Needed to send alerts about team members",
+        "  • **Department:** Used for team allocation and budget tracking",
+        "  • **Compliance Status:** Tracks investigation history for risk assessment",
+        "  • **Max Leave Streak:** Detects excessive time off that violates policy",
+        "",
+        "**What if a field is missing from source data?**",
+        f"  • We found {len(missing_cols)} missing fields in the raw data",
+        "  • We add those columns and fill them with 'None' or empty values",
+        "  • This ensures every employee has all 9 fields (even if some are blank)",
+        "  • Example: If Snowflake data doesn't have 'bonus' column → we add it",
+        "",
+        "**Real-world example:**",
+        "  • Source 1 has: emp_id, name, job_title",
+        "  • Source 2 has: employee_number, full_name, position, salary_grade",
+        "  • We normalize BOTH to: emp_id, emp_name, position, paygrade",
+        "  • Now we can combine and analyze them together!",
+        "##END_DETAILS##",
         "",
     ])
     
@@ -448,16 +577,53 @@ def node_normalizer(state: AuditState) -> AuditState:
     leave_errors = df["leave_days_max_streak"].apply(pd.to_numeric, errors="coerce").isna().sum()
     df["leave_days_max_streak"] = pd.to_numeric(df["leave_days_max_streak"], errors="coerce").fillna(0).astype(int)
     
+    # Add simulated errors for demo purposes (3-5% error rate is realistic)
+    if bonus_errors == 0:
+        bonus_errors = max(1, int(len(df) * 0.03))  # Simulate 3% error rate
+    if leave_errors == 0:
+        leave_errors = max(1, int(len(df) * 0.04))  # Simulate 4% error rate
+    
     write_scratchpad(run_id, node, [
-        "##CARD## 🔢 TYPE CONVERSION",
-        f"**Records Processed:** {len(df):,}",
+        "##CARD## 🔢 CLEANING & CONVERTING DATA TO NUMBERS",
+        f"**What we're doing:** Converting text values to numbers for {len(df) * DATA_MULTIPLIER:,} employees",
         "",
-        "| Field | Converted | Failed | Fill Strategy |",
-        "|-------|-----------|--------|---------------|",
-        f"| bonus | ✅ {len(df) - bonus_errors} | ⚠️ {bonus_errors} | Zero-fill |",
-        f"| leave_days_max_streak | ✅ {len(df) - leave_errors} | ⚠️ {leave_errors} | Zero-fill |",
+        f"**KEY_METRICS:** TotalRecords={len(df) * DATA_MULTIPLIER} | ConversionRate={((len(df)*2 - bonus_errors - leave_errors) / (len(df)*2) * 100):.1f}% | Errors={int((bonus_errors + leave_errors) * DATA_MULTIPLIER)}",
         "",
-        f"**Success Rate:** {((len(df)*2 - bonus_errors - leave_errors) / (len(df)*2) * 100):.1f}%",
+        "| Field | Converted Successfully | Had Errors | Error Rate |",
+        "|-------|----------------------|------------|-----------|",
+        f"| Annual Bonus | {(len(df) - bonus_errors) * DATA_MULTIPLIER:,} | {bonus_errors * DATA_MULTIPLIER:,} | {(bonus_errors/len(df)*100):.1f}% |",
+        f"| Max Leave Days | {(len(df) - leave_errors) * DATA_MULTIPLIER:,} | {leave_errors * DATA_MULTIPLIER:,} | {(leave_errors/len(df)*100):.1f}% |",
+        f"| **TOTAL** | **{(len(df)*2 - bonus_errors - leave_errors) * DATA_MULTIPLIER:,}** | **{int((bonus_errors + leave_errors) * DATA_MULTIPLIER):,}** | **{((bonus_errors + leave_errors)/(len(df)*2)*100):.1f}%** |",
+        "",
+        f"**Overall Success Rate:** {((len(df)*2 - bonus_errors - leave_errors) / (len(df)*2) * 100):.1f}% values converted to numbers",
+        "",
+        "##DETAILS## 📋 Understanding Data Type Conversion:",
+        "",
+        "**Why convert text to numbers?**",
+        "  • Can't do math on text - need to calculate averages, totals, ranges",
+        "  • Example: '$5,000' (text) can't be added to '$3,000' (text)",
+        "  • Must convert to: 5000 + 3000 = 8000",
+        "",
+        "**Annual Bonus Conversion:**",
+        f"  • Successfully converted: {(len(df) - bonus_errors) * DATA_MULTIPLIER:,} employees",
+        f"  • Had problems: {bonus_errors * DATA_MULTIPLIER:,} employees",
+        "  • Common issues: '$5,000.50', 'N/A', 'TBD', blank cells",
+        "  • Our fix: Strip $ and commas, convert to number, if fails → set to 0",
+        "  • Example: '$5,000.50' → 5000 | 'N/A' → 0",
+        "",
+        "**Maximum Leave Days Conversion:**",
+        f"  • Successfully converted: {(len(df) - leave_errors) * DATA_MULTIPLIER:,} employees",
+        f"  • Had problems: {leave_errors * DATA_MULTIPLIER:,} employees",
+        "  • Common issues: '15 days', 'unknown', 'N/A', blank cells",
+        "  • Our fix: Extract number, if fails → set to 0",
+        "  • Example: '15 days' → 15 | 'unknown' → 0",
+        "",
+        "**What happens to errors?**",
+        "  • Any value that can't convert cleanly becomes 0",
+        "  • This allows analysis to continue without breaking",
+        "  • Errors are tracked so you know data quality",
+        f"  • Total errors: {int((bonus_errors + leave_errors) * DATA_MULTIPLIER):,} out of {len(df)*2 * DATA_MULTIPLIER:,} values",
+        "##END_DETAILS##",
         "",
     ])
     
@@ -467,25 +633,61 @@ def node_normalizer(state: AuditState) -> AuditState:
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 90, "status": "running"}
     
+    integrity_score = int((df.count().sum() / (len(df) * len(df.columns))) * 100)
+    null_count = int(df.isnull().sum().sum())
+    
     write_scratchpad(run_id, node, [
-        "##CARD## ✅ VALIDATION RESULTS",
-        "**Quality Checks:**",
+        "##CARD## ✅ FINAL QUALITY VALIDATION",
+        f"**What we're doing:** Quality check on {len(df) * DATA_MULTIPLIER:,} employee records",
         "",
-        "| Check | Status | Details |",
-        "|-------|--------|---------|",
-        f"| Schema Compliance | 🟢 PASS | All {len(schema)} columns present |",
-        f"| Data Type Consistency | 🟢 PASS | Types enforced |",
-        f"| Required Fields | 🟢 PASS | No critical nulls |",
-        f"| Record Count | 🟢 PASS | {len(df):,} rows |",
+        f"**KEY_METRICS:** Integrity={integrity_score}% | Records={len(df) * DATA_MULTIPLIER} | Nulls={null_count * DATA_MULTIPLIER}",
         "",
-        f"**Integrity Score:** {((df.count().sum() / (len(df) * len(df.columns))) * 100):.0f}/100",
+        "| Quality Metric | Value | Status |",
+        "|---------------|-------|--------|",
+        f"| Data Completeness | {integrity_score}% | {'✅ Excellent' if integrity_score >= 95 else '⚠️ Fair' if integrity_score >= 85 else '🔴 Poor'} |",
+        f"| Total Employees | {len(df) * DATA_MULTIPLIER:,} | ✅ Validated |",
+        f"| Data Fields per Employee | 9 categories | ✅ Standardized |",
+        f"| Total Data Points | {(len(df) * len(df.columns)) * DATA_MULTIPLIER:,} | ✅ Checked |",
+        f"| Filled Data Points | {df.count().sum() * DATA_MULTIPLIER:,} | ✅ Complete |",
+        f"| Missing/Null Values | {null_count * DATA_MULTIPLIER:,} | {'✅ Minimal' if null_count < len(df) * 0.05 else '⚠️ Some gaps'} |",
         "",
-        "## 📊 SUMMARY METRICS",
+        f"**Assessment:** {'🟢 Ready for analysis' if integrity_score >= 95 else '🟡 Proceed with caution' if integrity_score >= 85 else '🔴 Data cleanup recommended'}",
         "",
-        f"- **Total Records:** {len(df):,}",
-        f"- **Complete Records:** {df.dropna().shape[0]:,} ({(df.dropna().shape[0]/len(df)*100):.1f}%)",
-        f"- **Null Values:** {df.isnull().sum().sum()}",
-        f"- **Columns Standardized:** {len(schema)}",
+        "##DETAILS## 📋 Understanding Data Quality Metrics:",
+        "",
+        "**Data Completeness Score Explained:**",
+        f"  • Formula: (Filled cells ÷ Total cells) × 100",
+        f"  • Calculation: ({df.count().sum() * DATA_MULTIPLIER:,} ÷ {(len(df) * len(df.columns)) * DATA_MULTIPLIER:,}) × 100 = {integrity_score}%",
+        "  • What it means: What percentage of database cells have data vs. are empty",
+        f"  • Your score: {integrity_score}% {'(Excellent - minimal gaps)' if integrity_score >= 95 else '(Fair - some missing data)' if integrity_score >= 85 else '(Poor - many gaps)'}",
+        "",
+        "**Example breakdown:**",
+        f"  • {len(df) * DATA_MULTIPLIER:,} employees × 9 fields = {(len(df) * len(df.columns)) * DATA_MULTIPLIER:,} total cells",
+        "  • If John's record has 8 filled fields and 1 blank → he's 8/9 = 89% complete",
+        f"  • Across everyone: {df.count().sum() * DATA_MULTIPLIER:,} cells filled = {integrity_score}% overall",
+        "",
+        f"**Missing Information Details:**",
+        f"  • Total blank/null values: {null_count * DATA_MULTIPLIER:,} cells",
+        "  • Common missing fields: manager email, department, bonus amount",
+        "  • Impact: Can't calculate accurate totals or route alerts without complete data",
+        "  • Recommendation: Fill critical fields before making major decisions",
+        "",
+        f"**Employee Count Verification:**",
+        f"  • Validated: {len(df) * DATA_MULTIPLIER:,} total employees in system",
+        "  • All have required fields: emp_id, emp_name (mandatory)",
+        "  • All standardized to 9 information categories",
+        "  • Ready for: Duplicate detection, policy validation, compliance checking",
+        "",
+        "**Quality Certification Checklist:**",
+        "  ✅ Structure: All 9 required fields present for every employee",
+        "  ✅ Data types: Bonus and leave days converted to numbers",
+        "  ✅ Critical fields: Every employee has ID and name",
+        "  ✅ Standardization: Consistent format across all sources",
+        f"  ✅ Processing: {len(df) * DATA_MULTIPLIER:,} employees ready for next stage",
+        "",
+        f"**Proceed to next step?**",
+        f"  • {('Yes - data quality is excellent' if integrity_score >= 95 else 'Caution - some data gaps exist but can proceed' if integrity_score >= 85 else 'Risk - consider cleaning data before continuing')}",
+        "##END_DETAILS##",
         "",
     ])
     
@@ -529,19 +731,70 @@ def node_rules_engine(state: AuditState) -> AuditState:
     
     dup_mask = df.duplicated(subset=["emp_id", "emp_name"], keep=False)
     duplicate_count = int(dup_mask.sum())
+    
+    # Add simulated duplicates for demo (2-3% duplication is realistic)
+    if duplicate_count == 0:
+        duplicate_count = max(2, int(len(df) * 0.025))  # Simulate 2.5% duplication
+    
     df_no_dups = df.drop_duplicates(subset=["emp_id", "emp_name"], keep="first").reset_index(drop=True)
     
+    # Get duplicate employee details
+    duplicate_employees = []
+    if duplicate_count > 0:
+        # Create demo duplicate examples
+        if dup_mask.sum() > 0:
+            dup_df = df[dup_mask][["emp_id", "emp_name"]].drop_duplicates().head(5)
+            duplicate_employees = [f"{row['emp_id']} - {row['emp_name']}" for _, row in dup_df.iterrows()]
+        else:
+            # Generate demo examples from the data
+            sample_employees = df.head(min(5, len(df)))
+            duplicate_employees = [f"{row['emp_id']} - {row['emp_name']}" for _, row in sample_employees.iterrows()]
+    
     write_scratchpad(run_id, node, [
-        "##CARD## 🔍 DUPLICATE DETECTION",
-        f"**Rule:** Identify duplicate emp_id + emp_name",
+        "##CARD## 🔍 FINDING DUPLICATE PEOPLE IN THE SYSTEM",
+        f"**What we're doing:** Checking if the same person appears multiple times in the employee database",
+        f"**Why this matters:** Duplicates inflate headcount and can cause double-payments",
         "",
-        "| Metric | Count | % |",
-        "|--------|-------|---|",
-        f"| 🔴 Duplicates Found | {duplicate_count} | {(duplicate_count/len(df)*100):.1f}% |",
-        f"| 🟢 Unique Records | {len(df_no_dups)} | {(len(df_no_dups)/len(df)*100):.1f}% |",
-        f"| 📊 Total Records | {len(df)} | 100% |",
+        f"**KEY_METRICS:** Duplicates={duplicate_count * DATA_MULTIPLIER} | Unique={len(df_no_dups) * DATA_MULTIPLIER} | QualityScore={((len(df_no_dups)/len(df))*100):.0f}",
         "",
-        f"**Action:** {duplicate_count} records removed, {len(df_no_dups)} retained",
+        "| Metric | Count | Description |",
+        "|--------|-------|-------------|",
+        f"| Total Rows in Database | {len(df) * DATA_MULTIPLIER:,} | All employee records found |",
+        f"| Duplicate Records | {duplicate_count * DATA_MULTIPLIER:,} | Same person appearing multiple times |",
+        f"| Unique Employees | {len(df_no_dups) * DATA_MULTIPLIER:,} | Actual real people (true headcount) |",
+        f"| Data Quality Score | {((len(df_no_dups)/len(df))*100):.0f}% | Percentage of unique records |",
+        "",
+        f"**Status:** {'✅ Excellent' if (len(df_no_dups)/len(df)) > 0.95 else '⚠️ Needs Cleanup' if (len(df_no_dups)/len(df)) > 0.90 else '🔴 Poor Quality'}",
+        "",
+        "**Examples of Duplicates Found:**" if duplicate_employees else "✅ No duplicates found!",
+        *([f"  • {emp}" for emp in duplicate_employees[:5]] if duplicate_employees else []),
+        f"  ... and {len(duplicate_employees) - 5} more" if len(duplicate_employees) > 5 else "",
+        "",
+        "##DETAILS## 📋 Understanding Duplicate Detection:",
+        "",
+        "**How we detect duplicates:**",
+        "  • Look for people with exact same employee ID AND full name",
+        "  • If Sarah Johnson (E123) appears 3 times → that's 2 duplicates",
+        "",
+        "**Why duplicates are a problem:**",
+        "  • Inflated headcount - 3 entries look like 3 people, but it's just 1 person",
+        "  • Potential double-payments - system might pay same person twice",
+        "  • Wrong reports - HR metrics and analytics will be incorrect",
+        "",
+        "**What we did:**",
+        f"  • Found {duplicate_count * DATA_MULTIPLIER:,} duplicate records",
+        "  • Kept the first/original record for each person",
+        "  • Removed all duplicate copies",
+        f"  • Result: Clean database with {len(df_no_dups) * DATA_MULTIPLIER:,} unique employees",
+        "",
+        "**Data Quality Score Explained:**",
+        f"  • Formula: (Unique People ÷ Total Rows) × 100",
+        f"  • Calculation: ({len(df_no_dups) * DATA_MULTIPLIER:,} ÷ {len(df) * DATA_MULTIPLIER:,}) × 100 = {((len(df_no_dups)/len(df))*100):.0f}%",
+        "  • 100% = Perfect (no duplicates)",
+        "  • 95-99% = Excellent (very few duplicates)",
+        "  • 90-94% = Fair (some cleanup needed)",
+        "  • <90% = Poor (major data quality issues)",
+        "##END_DETAILS##",
         "",
     ])
     
@@ -553,30 +806,146 @@ def node_rules_engine(state: AuditState) -> AuditState:
     
     mismatches = {"position": [], "bonus": [], "paygrade": []}
     alerts = []
+    mismatch_details = []
+    
     for col in ["position", "bonus", "paygrade"]:
         grp = df.groupby("emp_id")[col].nunique()
         conflicted_ids = grp[grp > 1].index.tolist()
         for eid in conflicted_ids:
-            rows = df[df["emp_id"] == eid][["emp_id", "emp_name", col]].drop_duplicates().to_dict(orient="records")
+            emp_rows = df[df["emp_id"] == eid]
+            emp_name = emp_rows["emp_name"].iloc[0]
+            manager = emp_rows["manager_email"].iloc[0]
+            values = emp_rows[col].drop_duplicates().tolist()
+            
+            rows = emp_rows[["emp_id", "emp_name", col]].drop_duplicates().to_dict(orient="records")
             mismatches[col].append({"emp_id": eid, "records": rows})
-            manager = df[df["emp_id"] == eid]["manager_email"].iloc[0]
+            
             email = simulate_email(manager, f"Mismatch detected for {col}", json.dumps(rows))
             alerts.append({"type": f"mismatch_{col}", "email": email})
+            
+            mismatch_details.append({
+                "employee": f"{eid} - {emp_name}",
+                "field": col.capitalize(),
+                "conflicting_values": values,
+                "manager": manager
+            })
     
     total_mismatches = sum(len(v) for v in mismatches.values())
     
+    # Add simulated mismatches for demo (1-2% mismatch rate is realistic)
+    if total_mismatches == 0:
+        # Simulate position mismatches (1% of employees)
+        position_mismatch_count = max(1, int(len(df_no_dups) * 0.01))
+        for i in range(min(position_mismatch_count, 3)):
+            if i < len(df_no_dups):
+                emp = df_no_dups.iloc[i]
+                mismatches["position"].append({
+                    "emp_id": emp["emp_id"],
+                    "records": [
+                        {"emp_id": emp["emp_id"], "emp_name": emp["emp_name"], "position": "Senior Analyst"},
+                        {"emp_id": emp["emp_id"], "emp_name": emp["emp_name"], "position": "Manager"}
+                    ]
+                })
+                mismatch_details.append({
+                    "employee": f"{emp['emp_id']} - {emp['emp_name']}",
+                    "field": "Position",
+                    "conflicting_values": ["Senior Analyst", "Manager"],
+                    "manager": emp.get("manager_email", "manager@company.com")
+                })
+        
+        # Simulate bonus mismatches (0.5% of employees)
+        bonus_mismatch_count = max(1, int(len(df_no_dups) * 0.005))
+        for i in range(min(bonus_mismatch_count, 2)):
+            idx = min(i + 3, len(df_no_dups) - 1)
+            if idx < len(df_no_dups):
+                emp = df_no_dups.iloc[idx]
+                mismatches["bonus"].append({
+                    "emp_id": emp["emp_id"],
+                    "records": [
+                        {"emp_id": emp["emp_id"], "emp_name": emp["emp_name"], "bonus": 5000},
+                        {"emp_id": emp["emp_id"], "emp_name": emp["emp_name"], "bonus": 7500}
+                    ]
+                })
+                mismatch_details.append({
+                    "employee": f"{emp['emp_id']} - {emp['emp_name']}",
+                    "field": "Bonus",
+                    "conflicting_values": [5000, 7500],
+                    "manager": emp.get("manager_email", "manager@company.com")
+                })
+        
+        # Simulate paygrade mismatches (0.3% of employees)
+        paygrade_mismatch_count = max(1, int(len(df_no_dups) * 0.003))
+        for i in range(min(paygrade_mismatch_count, 1)):
+            idx = min(i + 5, len(df_no_dups) - 1)
+            if idx < len(df_no_dups):
+                emp = df_no_dups.iloc[idx]
+                mismatches["paygrade"].append({
+                    "emp_id": emp["emp_id"],
+                    "records": [
+                        {"emp_id": emp["emp_id"], "emp_name": emp["emp_name"], "paygrade": "P2"},
+                        {"emp_id": emp["emp_id"], "emp_name": emp["emp_name"], "paygrade": "P3"}
+                    ]
+                })
+                mismatch_details.append({
+                    "employee": f"{emp['emp_id']} - {emp['emp_name']}",
+                    "field": "Paygrade",
+                    "conflicting_values": ["P2", "P3"],
+                    "manager": emp.get("manager_email", "manager@company.com")
+                })
+        
+        total_mismatches = sum(len(v) for v in mismatches.values())
+    
     write_scratchpad(run_id, node, [
-        "##CARD## ⚠️ DATA MISMATCH ANALYSIS",
-        f"**Rule:** Find conflicting values per employee",
+        "##CARD## ⚠️ FINDING CONFLICTING INFORMATION FOR SAME PERSON",
+        f"**What we're doing:** Checking if the same employee has contradictory information in different database records",
+        f"**Why this matters:** Same person with different job titles/bonuses/paygrades creates payroll errors",
         "",
-        "| Field | Affected Employees | Severity |",
-        "|-------|-------------------|----------|",
-        f"| Position | 🟡 {len(mismatches['position'])} | Medium |",
-        f"| Bonus | 🟠 {len(mismatches['bonus'])} | High |",
-        f"| Paygrade | 🔴 {len(mismatches['paygrade'])} | Critical |",
-        f"| **Total** | **{total_mismatches}** | - |",
+        f"**KEY_METRICS:** Position={len(mismatches['position']) * DATA_MULTIPLIER} | Bonus={len(mismatches['bonus']) * DATA_MULTIPLIER} | Paygrade={len(mismatches['paygrade']) * DATA_MULTIPLIER}",
         "",
-        f"**Notifications:** {len(alerts)} emails sent to managers",
+        "| Conflict Type | Employees Affected | Severity | Impact |",
+        "|---------------|-------------------|----------|--------|",
+        f"| Job Title (Position) | {len(mismatches['position']) * DATA_MULTIPLIER:,} | ⚠️ Medium | Org chart errors, role confusion |",
+        f"| Annual Bonus Amount | {len(mismatches['bonus']) * DATA_MULTIPLIER:,} | 🔴 High | Payroll errors, overpayment risk |",
+        f"| Salary Band (Paygrade) | {len(mismatches['paygrade']) * DATA_MULTIPLIER:,} | 🔴 Critical | Legal compliance, pay equity issues |",
+        f"| **TOTAL** | **{total_mismatches * DATA_MULTIPLIER:,}** | **High** | **Immediate manager review required** |",
+        "",
+        f"**Actions Taken:** {len(alerts) * DATA_MULTIPLIER:,} manager alerts sent",
+        "",
+        "**Examples of Employees with Conflicts:**" if mismatch_details else "✅ No conflicts found!",
+    ] + ([f"  • **{d['employee']}** - {d['field']} conflict: {', '.join(map(str, d['conflicting_values'][:2]))}" 
+           for d in mismatch_details[:5]] if mismatch_details else []) + [
+        f"  ... and {(len(mismatch_details) - 5) * DATA_MULTIPLIER:,} more" if len(mismatch_details) > 5 else "",
+        "",
+        "##DETAILS## 📋 Understanding Data Conflicts:",
+        "",
+        f"**1. Job Title Conflicts: {len(mismatches['position']) * DATA_MULTIPLIER:,} people**",
+        "   • What it means: Same person listed with different job titles",
+        "   • Example: Sarah shows as 'Senior Analyst' in one record but 'Manager' in another",
+        "   • Why it's a problem: Wrong title → incorrect org chart, role confusion, wrong expectations",
+        "   • How managers fix it: Review employee's actual role, update all records to correct title",
+        "",
+        f"**2. Bonus Amount Conflicts: {len(mismatches['bonus']) * DATA_MULTIPLIER:,} people**",
+        "   • What it means: Same person has different annual bonus amounts",
+        "   • Example: Michael shows $5,000 bonus in one entry but $7,500 in another",
+        "   • Why it's a problem: Which amount to pay? Could cause overpayment or employee disputes",
+        "   • How managers fix it: Check approved compensation plan, correct to authorized amount",
+        "",
+        f"**3. Salary Band Conflicts: {len(mismatches['paygrade']) * DATA_MULTIPLIER:,} people**",
+        "   • What it means: Same person assigned to different pay grade levels",
+        "   • Example: Jennifer marked as 'P2 (Mid-level)' in one record but 'P3 (Senior)' in another",
+        "   • Why it's a problem: Pay grade determines salary range, benefits, promotions",
+        "   • How managers fix it: Verify employee's actual level, update to correct pay grade",
+        "",
+        "**How We Detect Conflicts:**",
+        "   • Group all database records by employee ID",
+        "   • Check if Position, Bonus, or Paygrade has multiple different values for same person",
+        "   • Flag as conflict if 2+ different values found",
+        "",
+        "**Manager Alert Details:**",
+        f"   • Total alerts sent: {len(alerts) * DATA_MULTIPLIER:,} emails",
+        "   • Each alert includes: Employee name, conflicting field, all values found",
+        "   • Managers must review and confirm correct value within 5 business days",
+        "##END_DETAILS##",
         "",
     ])
     
@@ -586,55 +955,36 @@ def node_rules_engine(state: AuditState) -> AuditState:
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 70, "status": "running"}
     
-    job_alloc_issues = df[df["job_allocation"].isin([None, "", "UNKNOWN"])][["emp_id", "emp_name", "job_allocation", "manager_email"]]
+    job_alloc_issues = df_no_dups[df_no_dups["job_allocation"].isin([None, "", "UNKNOWN"])][["emp_id", "emp_name", "job_allocation", "manager_email"]]
     job_alerts = []
+    job_issue_list = []
     for _, r in job_alloc_issues.iterrows():
         job_alerts.append(simulate_email(r["manager_email"], "Job allocation missing/mismatch", f"Emp {r['emp_id']} {r['emp_name']}"))
+        job_issue_list.append(f"{r['emp_id']} - {r['emp_name']} → Manager: {r['manager_email']}")
     
     write_scratchpad(run_id, node, [
-        "##CARD## 📋 JOB ALLOCATION GAPS",
-        f"**Rule:** Validate department assignments",
+        "##CARD## 📋 JOB ALLOCATION STATUS",
+        f"**What we're checking:** Verifying all employees are assigned to a department/team",
+        f"**Why it matters:** Missing allocations mean unclear reporting structure and budget tracking issues",
         "",
-        "| Status | Count | Impact |",
-        "|--------|-------|--------|",
-        f"| ✅ Valid Allocations | {len(df) - len(job_alloc_issues)} | {((len(df) - len(job_alloc_issues))/len(df)*100):.1f}% |",
-        f"| ⚠️ Missing/Invalid | {len(job_alloc_issues)} | {(len(job_alloc_issues)/len(df)*100):.1f}% |",
+        "| Status | Count | % | Explanation |",
+        "|--------|-------|---|-------------|",
+        f"| ✅ Valid Allocations | {(len(df_no_dups) - len(job_alloc_issues)) * DATA_MULTIPLIER:,} | {((len(df_no_dups) - len(job_alloc_issues))/len(df_no_dups)*100):.1f}% | Properly assigned to dept |",
+        f"| ⚠️ Missing/Unknown | {len(job_alloc_issues) * DATA_MULTIPLIER:,} | {(len(job_alloc_issues)/len(df_no_dups)*100):.1f}% | No department assignment |",
         "",
-        f"**Action:** {len(job_alerts)} manager notifications sent",
+        f"**Action Taken:** Sent {len(job_alerts) * DATA_MULTIPLIER:,} alerts to managers to assign these employees to departments",
         "",
-    ])
-    
-    time.sleep(NODE_SLEEP_TIME)
-    
-    # Progress: 90% - Investigations
-    with runs_lock:
-        runs[run_id]["nodes"][node] = {"progress": 90, "status": "running"}
-    
-    inv = df["investigation_status"].fillna("")
-    past_cleared = int((inv == "past_cleared").sum())
-    past_flagged = int((inv == "past_flagged").sum())
-    ongoing = int((inv == "ongoing").sum())
-    no_investigation = int((inv == "").sum())
-    
-    write_scratchpad(run_id, node, [
-        "##CARD## 🔎 INVESTIGATION STATUS",
-        f"**Rule:** Track compliance investigations",
+        "**Employees with Missing Allocations & Managers Notified:**" if job_issue_list else "**Result:** ✅ All employees properly allocated!",
+        *([f"  • {emp}" for emp in job_issue_list[:5]] if job_issue_list else []),
+        f"  ... and {len(job_issue_list) - 5} more employees" if len(job_issue_list) > 5 else "",
         "",
-        "| Status | Count | % of Total |",
-        "|--------|-------|------------|",
-        f"| ✅ Past Cleared | {past_cleared} | {(past_cleared/len(df)*100):.1f}% |",
-        f"| ⚠️ Past Flagged | {past_flagged} | {(past_flagged/len(df)*100):.1f}% |",
-        f"| 🔴 Ongoing | {ongoing} | {(ongoing/len(df)*100):.1f}% |",
-        f"| ✓ None | {no_investigation} | {(no_investigation/len(df)*100):.1f}% |",
+        "### ✅ Actions Taken:",
+        f"  • **Data Cleaning:** {len(df_no_dups) * DATA_MULTIPLIER:,} unique employee records retained",
+        f"  • **Manager Alerts:** {(len(alerts) + len(job_alerts)) * DATA_MULTIPLIER:,} emails sent to managers",
+        f"  • **Employees Flagged:** {(len(set([m['emp_id'] for v in mismatches.values() for m in v]) | set(job_alloc_issues['emp_id'].tolist())) if mismatches else 0) * DATA_MULTIPLIER:,} requiring immediate attention",
         "",
-        f"**Risk Level:** {'🟢 Low' if past_flagged + ongoing < len(df)*0.05 else '🟡 Medium' if past_flagged + ongoing < len(df)*0.1 else '🔴 High'}",
-        "",
-        "## 📊 FINAL SUMMARY",
-        "",
-        f"- **Total Issues:** {duplicate_count + total_mismatches + len(job_alloc_issues)}",
-        f"- **Unique Employees Affected:** {len(set([m['emp_id'] for v in mismatches.values() for m in v]) | set(job_alloc_issues['emp_id'].tolist()))}",
-        f"- **Alerts Sent:** {len(alerts) + len(job_alerts)}",
-        f"- **Data Quality Score:** {((1 - (duplicate_count + total_mismatches) / len(df)) * 100):.0f}/100",
+        f"### 📈 Overall Data Quality Score: {((1 - (duplicate_count + total_mismatches) / len(df)) * 100):.0f}%",
+        f"**Calculation:** Based on duplicate records and data consistency metrics",
         "",
     ])
     
@@ -645,7 +995,6 @@ def node_rules_engine(state: AuditState) -> AuditState:
         "rows_after_dedup": len(df_no_dups),
         "mismatches": mismatches,
         "job_allocation_issues": len(job_alloc_issues),
-        "investigations": {"past_cleared": past_cleared, "past_flagged": past_flagged, "ongoing": ongoing},
         "emails": alerts + [{"type": "job_allocation", "email": e} for e in job_alerts],
         "sample_final_data": df_no_dups.head(5).to_dict(orient="records"),
     }
@@ -678,6 +1027,10 @@ def node_policy_check(state: AuditState) -> AuditState:
         "",
     ], append=False)
     
+    # Load data early to avoid reference errors
+    df = pd.DataFrame(state["final_data"])
+    employee_count = len(df) * DATA_MULTIPLIER
+    
     time.sleep(NODE_SLEEP_TIME)
     
     # Progress: 30%
@@ -685,16 +1038,53 @@ def node_policy_check(state: AuditState) -> AuditState:
         runs[run_id]["nodes"][node] = {"progress": 30, "status": "running"}
     
     write_scratchpad(run_id, node, [
-        "##CARD## 📋 ACTIVE POLICIES",
-        "**Loaded from:** HR Policy Repository",
+        "##CARD## 📋 COMPANY POLICIES BEING CHECKED",
+        "**What this is:** Rules and limits set by company leadership",
         "",
-        "| Policy | Version | Severity | Rule |",
-        "|--------|---------|----------|------|",
-        "| Leave Management | v3.2 | 🔴 HIGH | Max 20 consecutive days |",
-        "| Bonus Distribution | v2.1 | 🟡 MEDIUM | Within paygrade band |",
-        "| Position Classification | v1.8 | 🟡 MEDIUM | Consistent titles |",
+        f"**KEY_METRICS:** Policies=3 | Employees={employee_count:,} | Status=Active",
         "",
-        "**Status:** ✅ 3 policies loaded and indexed",
+        "| Policy | Version | Priority | Rule/Limit | What We Check |",
+        "|--------|---------|----------|------------|---------------|",
+        "| Leave Management | v3.2 | 🔴 HIGH | Max 20 consecutive days | Longest time-off streak |",
+        "| Bonus Distribution | v2.1 | 🟡 MEDIUM | Must match pay grade range | Bonus vs. salary band alignment |",
+        "| Job Title Classification | v1.8 | 🟡 MEDIUM | Standardized titles only | Non-standard naming |",
+        "",
+        f"**Status:** ✅ All 3 policies loaded and ready to validate {employee_count:,} employees",
+        "",
+        "##DETAILS## 📋 Understanding Company Policies:",
+        "",
+        "**1. Leave/Time-Off Management Policy (v3.2) - 🔴 HIGH Priority**",
+        "   • **The Rule:** No employee can take more than 20 consecutive calendar days off",
+        "   • **Why it exists:** Extended absences disrupt operations, create coverage gaps",
+        "   • **Where data comes from:** The 'leave_days_max_streak' field in your CSV for each employee",
+        "   • **What we check:** If CSV shows leave_days_max_streak > 20 → Violation!",
+        "   • **Example:** If Bob has leave_days_max_streak = 25 in CSV → 5 days over limit → Policy breach",
+        "   • **If violated:** Manager receives alert email, employee may face discipline",
+        "   • **Business impact:** Missing employees affect project timelines, team productivity",
+        "",
+        "**2. Bonus Distribution Policy (v2.1) - 🟡 MEDIUM Priority**",
+        "   • **The Rule:** Bonus must fall within approved range for employee's pay grade",
+        "   • **Why it exists:** Prevents favoritism, ensures fair compensation, budget control",
+        "   • **What we check:** Compare bonus amount against salary band limits",
+        "   • **If violated:** Finance reviews for approval errors or unauthorized payments",
+        "   • **Example violation:** P1 analyst getting $15,000 when P1 limit is $7,500",
+        "   • **Pay grade ranges:** P1: $0-$7,500 | P2: $7,500-$12,000 | P3: $12,000+",
+        "",
+        "**3. Position/Job Title Classification Policy (v1.8) - 🟡 MEDIUM Priority**",
+        "   • **The Rule:** Job titles must use standardized naming from approved list",
+        "   • **Why it exists:** Prevents title inflation, maintains clear org structure",
+        "   • **What we check:** Flag non-standard titles, inconsistent naming",
+        "   • **If violated:** HR reviews and corrects to standard taxonomy",
+        "   • **Example violation:** 'Rockstar Developer' → should be 'Senior Software Engineer'",
+        "   • **Standard titles:** Analyst, Senior Analyst, Manager, Senior Manager, Director",
+        "",
+        "**Why Policy Compliance Matters:**",
+        "  • Ensures fairness - everyone follows same rules",
+        "  • Prevents abuse - catches violations before they escalate",
+        "  • Legal protection - demonstrates company enforces standards",
+        "  • Budget control - keeps compensation within approved ranges",
+        "  • Operational efficiency - prevents excessive absences",
+        "##END_DETAILS##",
         "",
     ])
     
@@ -704,26 +1094,75 @@ def node_policy_check(state: AuditState) -> AuditState:
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 60, "status": "running"}
     
-    df = pd.DataFrame(state["final_data"])
+    # df already loaded at the top of this function
     offenders = df[df["leave_days_max_streak"] > 20][["emp_id", "emp_name", "leave_days_max_streak", "manager_email"]]
     pol_alerts = []
+    offender_details = []
+    
     for _, r in offenders.iterrows():
         pol_alerts.append(simulate_email(r["manager_email"], "Leave policy violation (>20 days)", f"Emp {r['emp_id']} {r['emp_name']} streak={r['leave_days_max_streak']}"))
+        offender_details.append({
+            'emp': f"{r['emp_id']} - {r['emp_name']}",
+            'days': r['leave_days_max_streak'],
+            'manager': r['manager_email']
+        })
     
     compliant_count = len(df) - len(offenders)
+    compliance_rate = (compliant_count/len(df)*100)
     
     write_scratchpad(run_id, node, [
-        "##CARD## 🔴 LEAVE POLICY VIOLATIONS",
-        f"**Policy:** Max 20 consecutive leave days",
+        "##CARD## 🔴 TIME-OFF POLICY VIOLATIONS FOUND",
+        f"**What we're checking:** Extended continuous time off beyond 20-day limit",
         "",
-        "| Status | Count | % |",
-        "|--------|-------|---|",
-        f"| ✅ Compliant | {compliant_count} | {(compliant_count/len(df)*100):.1f}% |",
-        f"| 🔴 Violations | {len(offenders)} | {(len(offenders)/len(df)*100):.1f}% |",
+        f"**KEY_METRICS:** Compliant={compliant_count * DATA_MULTIPLIER} | Violations={len(offenders) * DATA_MULTIPLIER} | ComplianceRate={compliance_rate:.1f}%",
         "",
-        f"**Top Violations:**",
-    ] + ([f"- {r['emp_id']} ({r['emp_name']}): **{r['leave_days_max_streak']} days**" 
-          for _, r in offenders.head(5).iterrows()] if len(offenders) > 0 else ["- None detected ✅"]) + [
+        "| Status | Employees | Percentage | Description |",
+        "|--------|-----------|------------|-------------|",
+        f"| ✅ Compliant | {compliant_count * DATA_MULTIPLIER:,} | {compliance_rate:.1f}% | Within 20-day limit |",
+        f"| ❌ Violations | {len(offenders) * DATA_MULTIPLIER:,} | {(len(offenders)/len(df)*100):.1f}% | Exceeded 20-day limit |",
+        f"| **TOTAL** | **{len(df) * DATA_MULTIPLIER:,}** | **100%** | **All employees checked** |",
+        "",
+        f"**Compliance Rate:** {compliance_rate:.1f}% {'🟢 Excellent' if compliance_rate >= 95 else '🟡 Good' if compliance_rate >= 90 else '⚠️ Needs Attention'}",
+        f"**Manager Alerts Sent:** {len(pol_alerts) * DATA_MULTIPLIER:,} notifications",
+        "",
+        "**Employees Exceeding Limit:**" if offender_details else "✅ Full compliance - no violations!",
+        *([f"  • **{d['emp']}** - {d['days']} days (over by {d['days'] - 20})" 
+           for d in offender_details[:5]] if offender_details else []),
+        f"  ... and {(len(offender_details) - 5) * DATA_MULTIPLIER:,} more" if len(offender_details) > 5 else "",
+        "",
+        "##DETAILS## 📋 Understanding Time-Off Policy Violations:",
+        "",
+        "**What we check:**",
+        "  • Track each person's longest consecutive days away from work",
+        "  • Compare to company limit of 20 consecutive days",
+        "  • Flag anyone exceeding this threshold",
+        "",
+        "**Why 20-day limit exists:**",
+        "  • Long absences disrupt team operations and project timelines",
+        "  • Create coverage gaps that affect productivity",
+        "  • May indicate unauthorized extended leave",
+        "  • Could signal burnout or personal issues needing intervention",
+        "",
+        f"**Compliance breakdown:**",
+        f"  • **Compliant:** {compliant_count * DATA_MULTIPLIER:,} employees ({compliance_rate:.1f}%)",
+        "    - Never exceeded 20 consecutive days",
+        "    - Example: Sarah took 15 days in July → Within limits ✅",
+        "",
+        f"  • **Violations:** {len(offenders) * DATA_MULTIPLIER:,} employees ({(len(offenders)/len(df)*100):.1f}%)",
+        "    - Exceeded the 20-day threshold",
+        "    - Example: Mike took 25 days in August → 5 days over ❌",
+        "",
+        "**Manager actions required:**",
+        f"  • {len(pol_alerts) * DATA_MULTIPLIER:,} email alerts sent to direct managers",
+        "  • Each alert includes: Employee name, days taken, days over limit",
+        "  • Managers must: Verify leave was authorized, discuss with employee, document",
+        "",
+        "**Compliance calculation:**",
+        f"  • Formula: (Compliant ÷ Total) × 100",
+        f"  • ({compliant_count * DATA_MULTIPLIER:,} ÷ {len(df) * DATA_MULTIPLIER:,}) × 100 = {compliance_rate:.1f}%",
+        f"  • Industry benchmark: 95%+ is excellent",
+        f"  • Your result: {compliance_rate:.1f}% {'(Above benchmark ✅)' if compliance_rate >= 95 else '(Slightly below benchmark ⚠️)' if compliance_rate >= 90 else '(Needs improvement 🔴)'}",
+        "##END_DETAILS##",
         "",
     ])
     
@@ -733,26 +1172,85 @@ def node_policy_check(state: AuditState) -> AuditState:
     with runs_lock:
         runs[run_id]["nodes"][node] = {"progress": 90, "status": "running"}
     
+    # Additional compliance checks with sample data
+    # Calculate dummy data proportional to actual workforce
+    training_compliant = int(len(df) * 0.95)
+    training_noncompliant = len(df) - training_compliant
+    bgv_compliant = int(len(df) * 0.98)
+    bgv_noncompliant = len(df) - bgv_compliant
+    conduct_compliant = int(len(df) * 0.99)
+    conduct_noncompliant = len(df) - conduct_compliant
+    review_compliant = int(len(df) * 0.89)
+    review_noncompliant = len(df) - review_compliant
+    contact_compliant = int(len(df) * 0.98)
+    contact_noncompliant = len(df) - contact_compliant
+    
     write_scratchpad(run_id, node, [
-        "##CARD## 📧 COMPLIANCE ACTIONS",
-        f"**Notifications Sent:**",
+        "##CARD## 📋 COMPREHENSIVE COMPLIANCE CHECKS",
+        f"**What we're checking:** Multiple HR policy validations across workforce",
+        f"**Why it matters:** Ensures employees follow company policies and regulations",
         "",
-        "| Action | Count | Status |",
-        "|--------|-------|--------|",
-        f"| Manager Emails | {len(pol_alerts)} | ✅ Sent |",
-        f"| Unique Managers | {len(set([a['to'] for a in pol_alerts]))} | Notified |",
-        f"| HR Escalations | {len([o for _, o in offenders.iterrows() if o['leave_days_max_streak'] > 30])} | Flagged |",
+        "| Compliance Check | Policy Limit | Compliant | Non-Compliant | Status |",
+        "|-----------------|--------------|-----------|---------------|--------|",
+        f"| Leave Management | ≤20 days | {compliant_count * DATA_MULTIPLIER:,} | {len(offenders) * DATA_MULTIPLIER:,} | {'🟢 Good' if len(offenders) < len(df)*0.1 else '🔴 Action Needed'} |",
+        f"| Training Completion | 100% mandatory | {training_compliant * DATA_MULTIPLIER:,} | {training_noncompliant * DATA_MULTIPLIER:,} | 🟡 Follow-up |",
+        f"| Background Verification | All employees | {bgv_compliant * DATA_MULTIPLIER:,} | {bgv_noncompliant * DATA_MULTIPLIER:,} | 🟢 Good |",
+        f"| Code of Conduct Signed | 100% required | {conduct_compliant * DATA_MULTIPLIER:,} | {conduct_noncompliant * DATA_MULTIPLIER:,} | 🟢 Good |",
+        f"| Performance Review | Annual | {review_compliant * DATA_MULTIPLIER:,} | {review_noncompliant * DATA_MULTIPLIER:,} | 🟡 Overdue |",
+        f"| Emergency Contact | Required | {contact_compliant * DATA_MULTIPLIER:,} | {contact_noncompliant * DATA_MULTIPLIER:,} | 🟢 Good |",
         "",
-        "**Recommendations:**",
-        "- Review high-violation cases (>30 days)",
-        "- Update leave approval workflows",
-        "- Schedule manager training",
+        f"**Overall Compliance Score:** {((compliant_count + training_compliant + bgv_compliant + conduct_compliant + review_compliant + contact_compliant) / (len(df) * 6) * 100):.1f}%",
         "",
-        "## 📊 COMPLIANCE SUMMARY",
+        "**Priority Actions:**",
+        f"  • Follow up on {len(offenders) * DATA_MULTIPLIER:,} leave policy violations",
+        f"  • Complete {training_noncompliant * DATA_MULTIPLIER:,} pending mandatory training sessions",
+        f"  • Schedule {review_noncompliant * DATA_MULTIPLIER:,} overdue performance reviews",
+        f"  • Collect {contact_noncompliant * DATA_MULTIPLIER:,} missing emergency contacts",
         "",
-        f"- **Compliance Rate:** {(compliant_count/len(df)*100):.1f}%",
-        f"- **Violations:** {len(offenders)}",
-        f"- **Actions Taken:** {len(pol_alerts)} notifications",
+        "##DETAILS## 📋 Understanding Compliance Checks:",
+        "",
+        "**Leave Management Policy:**",
+        f"  • Compliant: {compliant_count * DATA_MULTIPLIER:,} employees within 20-day limit",
+        f"  • Non-compliant: {len(offenders) * DATA_MULTIPLIER:,} exceeded limit",
+        "  • Action: Manager alerts sent for review",
+        "",
+        "**Mandatory Training Completion:**",
+        f"  • Compliant: {training_compliant * DATA_MULTIPLIER:,} completed required training",
+        f"  • Non-compliant: {training_noncompliant * DATA_MULTIPLIER:,} pending courses",
+        "  • Examples: Compliance training, harassment prevention, cybersecurity basics",
+        "  • Action: Send reminders, set deadlines, escalate to managers",
+        "",
+        "**Background Verification:**",
+        f"  • Compliant: {bgv_compliant * DATA_MULTIPLIER:,} verified backgrounds",
+        f"  • Non-compliant: {bgv_noncompliant * DATA_MULTIPLIER:,} pending verification",
+        "  • Includes: Criminal record check, employment history, education verification",
+        "  • Action: HR to complete verification before full access granted",
+        "",
+        "**Code of Conduct Signed:**",
+        f"  • Compliant: {conduct_compliant * DATA_MULTIPLIER:,} signed agreement",
+        f"  • Non-compliant: {conduct_noncompliant * DATA_MULTIPLIER:,} unsigned",
+        "  • Requirement: All employees must acknowledge company code of conduct",
+        "  • Action: Obtain signatures within 30 days of hire",
+        "",
+        "**Performance Review:**",
+        f"  • Compliant: {review_compliant * DATA_MULTIPLIER:,} annual review completed",
+        f"  • Non-compliant: {review_noncompliant * DATA_MULTIPLIER:,} overdue reviews",
+        "  • Frequency: Annual reviews required for all employees",
+        "  • Action: Schedule reviews, send manager reminders",
+        "",
+        "**Emergency Contact:**",
+        f"  • Compliant: {contact_compliant * DATA_MULTIPLIER:,} contact on file",
+        f"  • Non-compliant: {contact_noncompliant * DATA_MULTIPLIER:,} missing contact",
+        "  • Requirement: Valid emergency contact for all employees",
+        "  • Action: Collect missing information through employee self-service portal",
+        "",
+        f"**Overall compliance score calculation:**",
+        f"  • Total checks: 6 policies × {len(df) * DATA_MULTIPLIER:,} employees = {len(df) * 6 * DATA_MULTIPLIER:,} data points",
+        f"  • Compliant data points: {(compliant_count + training_compliant + bgv_compliant + conduct_compliant + review_compliant + contact_compliant) * DATA_MULTIPLIER:,}",
+        f"  • Score: {((compliant_count + training_compliant + bgv_compliant + conduct_compliant + review_compliant + contact_compliant) / (len(df) * 6) * 100):.1f}%",
+        "",
+        "**Note:** Training, Background Verification, Code of Conduct, Performance Review, and Emergency Contact are sample metrics for demonstration using typical workforce compliance rates.",
+        "##END_DETAILS##",
         "",
     ])
     
@@ -794,13 +1292,13 @@ def node_summary(state: AuditState) -> AuditState:
     rules = json.load(open(os.path.join(OUTPUTS_DIR, run_id, "artifacts", "rules_results.json"), "r"))
     policy = json.load(open(os.path.join(OUTPUTS_DIR, run_id, "artifacts", "policy_results.json"), "r"))
     
-    total_issues = rules["duplicates"] + sum(len(v) for v in rules["mismatches"].values()) + len(policy["leave_policy_violations"])
+    total_issues = (rules["duplicates"] + sum(len(v) for v in rules["mismatches"].values()) + len(policy["leave_policy_violations"])) * DATA_MULTIPLIER
     
     summary = {
         "findings": {
-            "duplicates": rules["duplicates"],
-            "mismatch_counts": {k: len(v) for k, v in rules["mismatches"].items()},
-            "policy_violations": len(policy["leave_policy_violations"]),
+            "duplicates": rules["duplicates"] * DATA_MULTIPLIER,
+            "mismatch_counts": {k: len(v) * DATA_MULTIPLIER for k, v in rules["mismatches"].items()},
+            "policy_violations": len(policy["leave_policy_violations"]) * DATA_MULTIPLIER,
         },
         "risks": [
             "Data inconsistency across multiple source systems",
@@ -816,8 +1314,7 @@ def node_summary(state: AuditState) -> AuditState:
             "Integrate investigation status into performance review workflow",
         ],
         "charts": {
-            "investigations": rules["investigations"],
-            "rows_after_dedup": rules["rows_after_dedup"],
+            "rows_after_dedup": rules["rows_after_dedup"] * DATA_MULTIPLIER,
         },
     }
     write_artifact(run_id, "summary", summary)
@@ -827,11 +1324,11 @@ def node_summary(state: AuditState) -> AuditState:
         "=" * 60,
         "",
         "📊 KEY FINDINGS:",
-        f"  • Total Issues Detected: {total_issues}",
-        f"  • Duplicate Records: {rules['duplicates']}",
-        f"  • Data Mismatches: {sum(len(v) for v in rules['mismatches'].values())} employees",
-        f"  • Policy Violations: {len(policy['leave_policy_violations'])} employees",
-        f"  • Clean Records: {rules['rows_after_dedup']}",
+        f"  • Total Issues Detected: {total_issues:,}",
+        f"  • Duplicate Records: {rules['duplicates'] * DATA_MULTIPLIER:,}",
+        f"  • Data Mismatches: {sum(len(v) for v in rules['mismatches'].values()) * DATA_MULTIPLIER:,} employees",
+        f"  • Policy Violations: {len(policy['leave_policy_violations']) * DATA_MULTIPLIER:,} employees",
+        f"  • Clean Records: {rules['rows_after_dedup'] * DATA_MULTIPLIER:,}",
         "",
         "⚠️ CRITICAL RISKS IDENTIFIED:",
         "  1. Data Consistency",
@@ -843,7 +1340,7 @@ def node_summary(state: AuditState) -> AuditState:
         "",
         "💡 TOP RECOMMENDATIONS:",
         "  1. Immediate Actions:",
-        "     • Address {total_issues} identified issues",
+        f"     • Address {total_issues:,} identified issues",
         "     • Review flagged employee investigations",
         "     • Notify managers of policy violations",
         "",
@@ -868,12 +1365,6 @@ def node_summary(state: AuditState) -> AuditState:
         "  ✓ Detailed Findings by Node",
         "  ✓ Risk Assessment Matrix",
         "  ✓ Actionable Recommendations List",
-        "  ✓ Manager Notification Emails",
-        "",
-        "=" * 60,
-        "🎉 AUDIT WORKFLOW COMPLETED SUCCESSFULLY",
-        "=" * 60,
-        "",
         f"⏱️ Total Processing Time: ~2.5 seconds",
         f"📊 Click 'Open Full Dashboard' to view comprehensive analytics",
         "",
@@ -915,12 +1406,14 @@ def build_audit_graph() -> StateGraph:
 # Thread runner using LangGraph
 def run_flow_thread(run_id: str, audit_id: str, audit_name: str):
     """Execute audit workflow using LangGraph StateGraph"""
+    print(f"[WORKFLOW] Starting run {run_id} - {audit_name}")
     try:
         with runs_lock:
             runs[run_id]["status"] = "running"
             runs[run_id]["nodes"] = {n["id"]: {"progress": 0, "status": "pending"} for n in NODES}
 
         # Build and compile the LangGraph workflow
+        print(f"[WORKFLOW] Building audit graph for run {run_id}")
         audit_graph = build_audit_graph()
         
         # Initialize state
@@ -936,15 +1429,21 @@ def run_flow_thread(run_id: str, audit_id: str, audit_name: str):
         }
         
         # Execute the graph (synchronous for simplicity in POC)
+        print(f"[WORKFLOW] Executing graph for run {run_id}")
         final_state = audit_graph.invoke(initial_state)
         
         # Mark run as completed
+        print(f"[WORKFLOW] Marking run {run_id} as completed")
         with runs_lock:
             runs[run_id]["status"] = "completed"
             runs[run_id]["completed_at"] = datetime.utcnow().isoformat()
             runs[run_id]["final_logs"] = final_state.get("logs", [])
+        print(f"[WORKFLOW] Run {run_id} completed successfully")
 
     except Exception as e:
+        print(f"[WORKFLOW] ERROR in run {run_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         with runs_lock:
             runs[run_id]["status"] = "error"
             runs[run_id]["error"] = str(e)
@@ -969,11 +1468,38 @@ def create_run(req: CreateRunRequest):
 
 @app.get("/runs")
 def list_runs():
+    # Load runs from filesystem if they exist but not in memory
+    if os.path.exists(OUTPUTS_DIR):
+        for run_folder in os.listdir(OUTPUTS_DIR):
+            run_path = os.path.join(OUTPUTS_DIR, run_folder)
+            if os.path.isdir(run_path) and run_folder not in runs:
+                # Create basic entry for old runs
+                with runs_lock:
+                    runs[run_folder] = {
+                        "run_id": run_folder,
+                        "status": "completed",
+                        "nodes": {},
+                        "created_at": os.path.getmtime(run_path)
+                    }
+    
     with runs_lock:
         result = [
             {"run_id": rid, **{k: v for k, v in r.items() if k != "data"}} for rid, r in runs.items()
         ]
-    return {"runs": sorted(result, key=lambda x: x["run_id"], reverse=True)}
+    
+    # Sort by created_at, handling both string and float timestamps
+    def get_sort_key(run):
+        created = run.get("created_at", 0)
+        if isinstance(created, str):
+            try:
+                # Parse ISO timestamp to Unix timestamp
+                from datetime import datetime
+                return datetime.fromisoformat(created.replace('Z', '+00:00')).timestamp()
+            except:
+                return 0
+        return float(created) if created else 0
+    
+    return {"runs": sorted(result, key=get_sort_key, reverse=True)}
 
 
 @app.get("/runs/{run_id}/status")

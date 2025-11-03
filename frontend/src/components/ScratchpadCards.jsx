@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MetricCard, ProgressCircle, StatGrid, SimpleBarChart, StatusBadge } from './MetricCard'
 
 // Rich text formatter component
@@ -141,7 +141,7 @@ function formatInline(text) {
     if (boldMatch) {
       const before = remaining.substring(0, boldMatch.index)
       if (before) parts.push(<span key={key++}>{before}</span>)
-      parts.push(<strong key={key++} style={{ fontWeight: '700', color: '#78350f' }}>{boldMatch[1]}</strong>)
+      parts.push(<strong key={key++} style={{ fontWeight: '600', color: '#78350f', fontSize: 'inherit' }}>{boldMatch[1]}</strong>)
       remaining = remaining.substring(boldMatch.index + boldMatch[0].length)
       continue
     }
@@ -164,7 +164,7 @@ function formatInline(text) {
   return parts.length > 0 ? parts : text
 }
 
-function ScratchCard({ title, content, icon, type, metrics, expandable = true, nodeId }) {
+function ScratchCard({ title, content, icon, type, metrics, expandable = true, nodeId, detailsContent, onShowDetails }) {
   const [expanded, setExpanded] = useState(false)
   
   // Extract visual metrics from content
@@ -173,72 +173,168 @@ function ScratchCard({ title, content, icon, type, metrics, expandable = true, n
     
     // Check if this card should render as visual metrics
     if (cardTitle.includes('SNOWFLAKE') || cardTitle.includes('API') || cardTitle.includes('DRIVE') || cardTitle.includes('CSV')) {
-      // Parse data source metrics
-      const recordsMatch = text.match(/(\d+,?\d+)\s*(?:records|rows)/i)
-      const columnsMatch = text.match(/(\d+)\s*(?:columns|fields)/i)
-      const sizeMatch = text.match(/([\d.]+)\s*(?:MB|KB|GB)/i)
+      // Parse data source metrics - support both "Records: 3,000" and "3,000 records" formats
+      const recordsMatch = text.match(/(?:Records?|Rows?):\s*([\d,]+)|(\d+,?\d*)\s*(?:records|rows)/i)
+      const columnsMatch = text.match(/(?:Columns?|Fields?):\s*([\d,]+)|(\d+)\s*(?:columns|fields)/i)
+      const sizeMatch = text.match(/(?:Size|Data):\s*([\d.]+\s*(?:MB|KB|GB))|([\d.]+\s*(?:MB|KB|GB))/i)
+      const tablesMatch = text.match(/(?:Tables?|Files?):\s*(\d+)|(\d+)\s*(?:tables?|files?)/i)
       
-      if (recordsMatch || columnsMatch || sizeMatch) {
+      if (recordsMatch || columnsMatch || sizeMatch || tablesMatch) {
+        // Determine labels dynamically based on what was matched
+        const columnsLabel = text.includes('Fields:') ? 'Fields' : 'Columns'
+        const tablesLabel = text.includes('Files:') ? 'Files' : 'Tables'
+        
         return {
           type: 'datasource',
           metrics: [
-            recordsMatch && { value: recordsMatch[1], label: 'Records', icon: '📊', color: 'blue', description: 'Total rows fetched' },
-            columnsMatch && { value: columnsMatch[1], label: 'Columns', icon: '📋', color: 'cyan', description: 'Data fields' },
-            sizeMatch && { value: sizeMatch[0], label: 'Size', icon: '💾', color: 'purple', description: 'Data volume' }
+            recordsMatch && { value: recordsMatch[1] || recordsMatch[2], label: 'Records', icon: '📊', color: 'blue', description: 'Total rows fetched' },
+            columnsMatch && { value: columnsMatch[1] || columnsMatch[2], label: columnsLabel, icon: '📋', color: 'cyan', description: 'Data fields' },
+            sizeMatch && { value: sizeMatch[1] || sizeMatch[2], label: 'Size', icon: '💾', color: 'purple', description: 'Data volume' },
+            tablesMatch && { value: tablesMatch[1] || tablesMatch[2], label: tablesLabel, icon: '📁', color: 'green', description: 'Data sources' }
           ].filter(Boolean)
         }
       }
     }
     
     if (cardTitle.includes('DUPLICATE')) {
-      const duplicatesMatch = text.match(/(\d+)\s*(?:records|rows|duplicates)/i)
-      const uniqueMatch = text.match(/(\d+)\s*(?:Unique|records.*Unique)/i)
-      const percentMatch = text.match(/([\d.]+)%/i)
+      // Look for KEY_METRICS line first
+      const keyMetricsMatch = text.match(/KEY_METRICS:.*?Duplicates=(\d+).*?Unique=(\d+).*?QualityScore=(\d+)/i)
+      
+      if (keyMetricsMatch) {
+        return {
+          type: 'quality',
+          duplicates: keyMetricsMatch[1],
+          unique: keyMetricsMatch[2],
+          percent: parseFloat(keyMetricsMatch[3]),
+          description: text
+        }
+      }
+      
+      // Fallback to old parsing
+      const duplicatesMatch = text.match(/(\d+)\s*Duplicates/i)
+      const uniqueMatch = text.match(/(\d+)\s*Unique/i)
+      const percentMatch = text.match(/([\d.]+)%.*?Quality/i)
       
       return {
         type: 'quality',
         duplicates: duplicatesMatch ? duplicatesMatch[1] : '0',
         unique: uniqueMatch ? uniqueMatch[1] : '0',
-        percent: percentMatch ? parseFloat(percentMatch[1]) : 0
+        percent: percentMatch ? parseFloat(percentMatch[1]) : 0,
+        description: text
       }
     }
     
     if (cardTitle.includes('MISMATCH')) {
+      // Look for KEY_METRICS line first
+      const keyMetricsMatch = text.match(/KEY_METRICS:.*?Position=(\d+).*?Bonus=(\d+).*?Paygrade=(\d+)/i)
+      
       const matches = []
-      const positionMatch = text.match(/Position.*?(\d+)/i)
-      const bonusMatch = text.match(/Bonus.*?(\d+)/i)
-      const paygradeMatch = text.match(/Paygrade.*?(\d+)/i)
+      if (keyMetricsMatch) {
+        matches.push({ label: 'Position', value: parseInt(keyMetricsMatch[1]), color: '#f59e0b' })
+        matches.push({ label: 'Bonus', value: parseInt(keyMetricsMatch[2]), color: '#f97316' })
+        matches.push({ label: 'Paygrade', value: parseInt(keyMetricsMatch[3]), color: '#ef4444' })
+      } else {
+        // Fallback parsing
+        const positionMatch = text.match(/Position=(\d+)|Position.*?(\d+)/i)
+        const bonusMatch = text.match(/Bonus=(\d+)|Bonus.*?(\d+)/i)
+        const paygradeMatch = text.match(/Paygrade=(\d+)|Paygrade.*?(\d+)/i)
+        
+        if (positionMatch) matches.push({ label: 'Position', value: parseInt(positionMatch[1] || positionMatch[2]), color: '#f59e0b' })
+        if (bonusMatch) matches.push({ label: 'Bonus', value: parseInt(bonusMatch[1] || bonusMatch[2]), color: '#f97316' })
+        if (paygradeMatch) matches.push({ label: 'Paygrade', value: parseInt(paygradeMatch[1] || paygradeMatch[2]), color: '#ef4444' })
+      }
       
-      if (positionMatch) matches.push({ label: 'Position', value: parseInt(positionMatch[1]), color: '#f59e0b' })
-      if (bonusMatch) matches.push({ label: 'Bonus', value: parseInt(bonusMatch[1]), color: '#f97316' })
-      if (paygradeMatch) matches.push({ label: 'Paygrade', value: parseInt(paygradeMatch[1]), color: '#ef4444' })
-      
-      return { type: 'mismatch', data: matches }
+      return { type: 'mismatch', data: matches, description: text }
     }
     
     if (cardTitle.includes('INVESTIGATION')) {
-      const clearedMatch = text.match(/Past Cleared.*?(\d+)/i)
-      const flaggedMatch = text.match(/Past Flagged.*?(\d+)/i)
-      const ongoingMatch = text.match(/Ongoing.*?(\d+)/i)
+      // Look for KEY_METRICS line first
+      const keyMetricsMatch = text.match(/KEY_METRICS:.*?Cleared=(\d+).*?Flagged=(\d+).*?Ongoing=(\d+)/i)
+      
+      if (keyMetricsMatch) {
+        return {
+          type: 'investigation',
+          data: [
+            { label: 'Cleared', value: parseInt(keyMetricsMatch[1]), color: '#10b981', icon: '✓' },
+            { label: 'Flagged', value: parseInt(keyMetricsMatch[2]), color: '#f59e0b', icon: '⚠' },
+            { label: 'Ongoing', value: parseInt(keyMetricsMatch[3]), color: '#ef4444', icon: '🔍' }
+          ],
+          description: text
+        }
+      }
+      
+      // Fallback parsing
+      const clearedMatch = text.match(/Cleared=(\d+)|Past Cleared.*?(\d+)/i)
+      const flaggedMatch = text.match(/Flagged=(\d+)|Past Flagged.*?(\d+)/i)
+      const ongoingMatch = text.match(/Ongoing=(\d+)|Ongoing.*?(\d+)/i)
       
       return {
         type: 'investigation',
         data: [
-          clearedMatch && { label: 'Cleared', value: parseInt(clearedMatch[1]), color: '#10b981', icon: '✓' },
-          flaggedMatch && { label: 'Flagged', value: parseInt(flaggedMatch[1]), color: '#f59e0b', icon: '⚠' },
-          ongoingMatch && { label: 'Ongoing', value: parseInt(ongoingMatch[1]), color: '#ef4444', icon: '🔍' }
-        ].filter(Boolean)
+          clearedMatch && { label: 'Cleared', value: parseInt(clearedMatch[1] || clearedMatch[2]), color: '#10b981', icon: '✓' },
+          flaggedMatch && { label: 'Flagged', value: parseInt(flaggedMatch[1] || flaggedMatch[2]), color: '#f59e0b', icon: '⚠' },
+          ongoingMatch && { label: 'Ongoing', value: parseInt(ongoingMatch[1] || ongoingMatch[2]), color: '#ef4444', icon: '🔍' }
+        ].filter(Boolean),
+        description: text
       }
     }
     
-    if (cardTitle.includes('VALIDATION') || cardTitle.includes('COMPLIANCE')) {
-      const rateMatch = text.match(/([\d.]+)%.*?(?:Compliant|Success|Pass)/i)
-      const violationsMatch = text.match(/(\d+).*?(?:Violations|Issues|Errors)/i)
+    // Schema validation results (Node 2) - show as quality metrics
+    if (cardTitle.includes('VALIDATION RESULTS')) {
+      // Look for KEY_METRICS line first
+      const keyMetricsMatch = text.match(/KEY_METRICS:.*?Integrity=(\d+).*?Records=(\d+).*?Nulls=(\d+)/i)
+      
+      if (keyMetricsMatch) {
+        return {
+          type: 'validation',
+          integrity: parseInt(keyMetricsMatch[1]),
+          records: keyMetricsMatch[2],
+          nulls: parseInt(keyMetricsMatch[3]),
+          description: text
+        }
+      }
+      
+      // Fallback parsing
+      const integrityMatch = text.match(/Integrity=(\d+)|(\d+)%.*?Data Integrity/i)
+      const totalRecordsMatch = text.match(/Records=(\d+)|Total Records.*?(\d+,?\d*)/i)
+      const nullsMatch = text.match(/Nulls=(\d+)|Null Values.*?(\d+)/i)
+      
+      return {
+        type: 'validation',
+        integrity: integrityMatch ? parseInt(integrityMatch[1] || integrityMatch[2]) : 0,
+        records: totalRecordsMatch ? (totalRecordsMatch[1] || totalRecordsMatch[2]) : '0',
+        nulls: nullsMatch ? parseInt(nullsMatch[1] || nullsMatch[2]) : 0,
+        description: text
+      }
+    }
+    
+    // Policy compliance check (Node 4) - show as compliance gauge
+    // Exclude "COMPREHENSIVE COMPLIANCE CHECKS" - that should be a table, not visual
+    if ((cardTitle.includes('LEAVE POLICY') || (cardTitle.includes('COMPLIANCE') && !cardTitle.includes('COMPREHENSIVE')))) {
+      // Look for KEY_METRICS line first
+      const keyMetricsMatch = text.match(/KEY_METRICS:.*?Compliant=(\d+).*?Violations=(\d+).*?Rate=([\d.]+)/i)
+      
+      if (keyMetricsMatch) {
+        return {
+          type: 'compliance',
+          rate: parseFloat(keyMetricsMatch[3]),
+          violations: parseInt(keyMetricsMatch[2]),
+          compliant: parseInt(keyMetricsMatch[1]),
+          description: text
+        }
+      }
+      
+      // Fallback parsing
+      const rateMatch = text.match(/Rate=([\d.]+)|([\d.]+)%.*?Compliance Rate/i)
+      const violationsMatch = text.match(/Violations=(\d+)|(\d+).*?Violations/i)
+      const compliantMatch = text.match(/Compliant=(\d+)|(\d+).*?Compliant/i)
       
       return {
         type: 'compliance',
-        rate: rateMatch ? parseFloat(rateMatch[1]) : 0,
-        violations: violationsMatch ? parseInt(violationsMatch[1]) : 0
+        rate: rateMatch ? parseFloat(rateMatch[1] || rateMatch[2]) : 0,
+        violations: violationsMatch ? parseInt(violationsMatch[1] || violationsMatch[2]) : 0,
+        compliant: compliantMatch ? parseInt(compliantMatch[1] || compliantMatch[2]) : 0,
+        description: text
       }
     }
     
@@ -255,6 +351,19 @@ function ScratchCard({ title, content, icon, type, metrics, expandable = true, n
           <div className="visual-card-header">
             <span className="visual-icon">{icon}</span>
             <span className="visual-title">{title}</span>
+            {detailsContent && (
+              <button 
+                className="action-btn show-details-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onShowDetails && onShowDetails()
+                }}
+                title="Show Details"
+                style={{ marginLeft: 'auto' }}
+              >
+                🔍
+              </button>
+            )}
           </div>
           <div className="metrics-row">
             {visualData.metrics.map((m, i) => (
@@ -277,24 +386,47 @@ function ScratchCard({ title, content, icon, type, metrics, expandable = true, n
         <div className={`scratch-card-visual ${type}`}>
           <div className="visual-card-header">
             <span className="visual-icon">{icon}</span>
-            <span className="visual-title">{title}</span>
+            <div style={{ flex: 1 }}>
+              <div className="visual-title">{title}</div>
+              <div className="visual-subtitle">Scans CSV for repeated employee records (same ID + Name)</div>
+            </div>
+            {detailsContent && (
+              <button 
+                className="action-btn show-details-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onShowDetails && onShowDetails()
+                }}
+                title="Show Details"
+              >
+                🔍
+              </button>
+            )}
           </div>
           <div className="quality-grid">
             <MetricCard 
               value={visualData.duplicates} 
-              label="Duplicates" 
+              label="Duplicates Found" 
               icon="🔴" 
               color="red"
-              description="Repeated records identified"
+              description="Same person appearing multiple times in CSV"
             />
             <MetricCard 
               value={visualData.unique} 
-              label="Unique" 
+              label="Unique Employees" 
               icon="✓" 
               color="green"
-              description="Distinct employee records"
+              description="Actual distinct people (real headcount)"
             />
-            <ProgressCircle percentage={100 - visualData.percent} label="Data Quality Score" color="#10b981" />
+            <ProgressCircle 
+              percentage={visualData.percent} 
+              label="Data Quality Score" 
+              color="#10b981" 
+            />
+          </div>
+          <div className="visual-explanation">
+            <strong>What this means:</strong> If John Doe appears 3 times → 2 duplicates. We keep 1, remove 2. 
+            Quality Score = {visualData.percent}% = {visualData.unique} unique / total rows. Higher is better!
           </div>
         </div>
       )
@@ -305,12 +437,28 @@ function ScratchCard({ title, content, icon, type, metrics, expandable = true, n
         <div className={`scratch-card-visual ${type}`}>
           <div className="visual-card-header">
             <span className="visual-icon">{icon}</span>
-            <div>
+            <div style={{ flex: 1 }}>
               <div className="visual-title">{title}</div>
-              <div className="visual-subtitle">Conflicting data across employees</div>
+              <div className="visual-subtitle">Finds employees with conflicting Position/Bonus/Paygrade in CSV</div>
             </div>
+            {detailsContent && (
+              <button 
+                className="action-btn show-details-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onShowDetails && onShowDetails()
+                }}
+                title="Show Details"
+              >
+                🔍
+              </button>
+            )}
           </div>
           <SimpleBarChart data={visualData.data} />
+          <div className="visual-explanation">
+            <strong>What this means:</strong> If Alice (E001) has 2 rows - one says Position='Analyst', other says 'Manager' → That's 1 Position mismatch! 
+            Managers of affected employees receive email alerts to fix the data errors.
+          </div>
         </div>
       )
     }
@@ -320,12 +468,81 @@ function ScratchCard({ title, content, icon, type, metrics, expandable = true, n
         <div className={`scratch-card-visual ${type}`}>
           <div className="visual-card-header">
             <span className="visual-icon">{icon}</span>
-            <div>
+            <div style={{ flex: 1 }}>
               <div className="visual-title">{title}</div>
-              <div className="visual-subtitle">Employee compliance tracking</div>
+              <div className="visual-subtitle">Tracks employee compliance and past HR investigations</div>
             </div>
+            {detailsContent && (
+              <button 
+                className="action-btn show-details-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onShowDetails && onShowDetails()
+                }}
+                title="Show Details"
+              >
+                🔍
+              </button>
+            )}
           </div>
           <StatGrid stats={visualData.data} />
+          <div className="visual-explanation">
+            <strong>How determined:</strong> HR assigns these statuses after completing formal investigations into policy violations or ethics complaints.
+            <br/>
+            <strong>Categories:</strong> Cleared = investigated & innocent | Flagged = had past issues, now resolved | Ongoing = currently under investigation | No History = clean record
+          </div>
+        </div>
+      )
+    }
+    
+    if (visualData.type === 'validation') {
+      return (
+        <div className={`scratch-card-visual ${type}`}>
+          <div className="visual-card-header">
+            <span className="visual-icon">{icon}</span>
+            <div style={{ flex: 1 }}>
+              <div className="visual-title">{title}</div>
+              <div className="visual-subtitle">Validates data quality after schema standardization</div>
+            </div>
+            {detailsContent && (
+              <button 
+                className="action-btn show-details-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onShowDetails && onShowDetails()
+                }}
+                title="Show Details"
+              >
+                🔍
+              </button>
+            )}
+          </div>
+          <div className="quality-grid">
+            <ProgressCircle 
+              percentage={visualData.integrity} 
+              label="Data Integrity" 
+              color="#10b981" 
+            />
+            <MetricCard 
+              value={visualData.records} 
+              label="Records Validated" 
+              icon="📊" 
+              color="blue"
+              description="Total employee rows processed"
+            />
+            <MetricCard 
+              value={visualData.nulls} 
+              label="Null Values" 
+              icon="⚠️" 
+              color={visualData.nulls > 0 ? 'orange' : 'green'}
+              description="Missing data points across all fields"
+            />
+          </div>
+          <div className="visual-explanation">
+            <strong>What this means:</strong> Data Integrity = {visualData.integrity}% = cells with data / total cells × 100. 
+            If you have {visualData.records} rows × 9 columns, system checks how many cells are filled vs empty. 
+            <strong>Nulls</strong> = missing values like blank bonus or empty department fields.
+          </div>
         </div>
       )
     }
@@ -335,20 +552,39 @@ function ScratchCard({ title, content, icon, type, metrics, expandable = true, n
         <div className={`scratch-card-visual ${type}`}>
           <div className="visual-card-header">
             <span className="visual-icon">{icon}</span>
-            <div>
+            <div style={{ flex: 1 }}>
               <div className="visual-title">{title}</div>
-              <div className="visual-subtitle">Leave policy adherence check</div>
+              <div className="visual-subtitle">Checks 'leave_days_max_streak' column in CSV against policy limit</div>
             </div>
+            {detailsContent && (
+              <button 
+                className="action-btn show-details-btn"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onShowDetails && onShowDetails()
+                }}
+                title="Show Details"
+              >
+                🔍
+              </button>
+            )}
           </div>
           <div className="compliance-grid">
             <ProgressCircle percentage={visualData.rate} label="Compliance Rate" color="#3b82f6" />
             <MetricCard 
               value={visualData.violations} 
-              label="Violations" 
+              label="Policy Violations" 
               icon="⚠️" 
-              color="orange"
-              description="Policy breaches found"
+              color="red"
+              description="Employees exceeding 20-day limit"
             />
+          </div>
+          <div className="visual-explanation">
+            <strong>Where this comes from:</strong> The 'leave_days_max_streak' field in your CSV for each employee.
+            <br/>
+            <strong>Policy Rule:</strong> Max 20 consecutive leave days allowed. If CSV shows leave_days_max_streak &gt; 20 → Violation!
+            <br/>
+            <strong>Example:</strong> If Bob has leave_days_max_streak = 25 in CSV → That's 5 days over limit = Policy breach. Manager receives alert email.
           </div>
         </div>
       )
@@ -366,6 +602,18 @@ function ScratchCard({ title, content, icon, type, metrics, expandable = true, n
           <div className="scratch-card-modern-title">{title}</div>
         </div>
         <div className="scratch-card-modern-actions">
+          {detailsContent && (
+            <button 
+              className="action-btn show-details-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                onShowDetails && onShowDetails()
+              }}
+              title="Show Details"
+            >
+              🔍
+            </button>
+          )}
           {expandable && (
             <button 
               className="action-btn"
@@ -416,7 +664,16 @@ function parseScratchpadToCards(text, nodeId) {
     // Extract title from first line
     const lines = section.split('\n')
     const titleLine = lines[0].trim()
-    const content = lines.slice(1).join('\n').trim()
+    let fullContent = lines.slice(1).join('\n').trim()
+    
+    // Extract ##DETAILS## section if present
+    let mainContent = fullContent
+    let detailsContent = ''
+    const detailsMatch = fullContent.match(/##DETAILS##([\s\S]*?)##END_DETAILS##/)
+    if (detailsMatch) {
+      detailsContent = detailsMatch[1].trim()
+      mainContent = fullContent.replace(/##DETAILS##[\s\S]*?##END_DETAILS##/, '').trim()
+    }
     
     // Determine icon and type from title
     let icon = '📝'
@@ -453,7 +710,8 @@ function parseScratchpadToCards(text, nodeId) {
     
     cards.push({
       title: titleLine,
-      content: content,
+      content: mainContent,
+      detailsContent: detailsContent,
       icon: icon,
       type: type,
       metrics: [],
@@ -556,6 +814,8 @@ export default function ScratchpadCards({ text, nodeId }) {
               metrics={card.metrics}
               expandable={card.expandable !== false}
               nodeId={nodeId}
+              detailsContent={card.detailsContent}
+              onShowDetails={() => setPopupData({ title: `${card.title} - Details`, content: card.detailsContent })}
             />
           )
         })}

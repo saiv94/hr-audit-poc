@@ -18,29 +18,54 @@ export default function App() {
   const [summary, setSummary] = useState(null)
   const [showDashboard, setShowDashboard] = useState(false)
 
-  // load runs on mount
+  // load runs on mount (but don't auto-select - start blank)
   useEffect(() => {
     (async () => {
       const rs = await getRuns()
       setRuns(rs)
-      if (rs.length && !activeRunId) setActiveRunId(rs[0].run_id)
+      // Don't auto-select old runs - keep blank until user submits new audit
     })()
   }, [])
 
-  // poll status and nodes for active run
+  // poll status and nodes for active run (stop when completed)
   useEffect(() => {
     if (!activeRunId) return
     let timer = null
+    let stopped = false
+    
     const tick = async () => {
+      if (stopped) return
+      
       const status = await getStatus(activeRunId)
       setNodeStates(status.nodes || {})
       const ns = await getNodes(activeRunId)
       setNodes(ns)
+      
+      // Update the runs list with the latest status
+      setRuns(prevRuns => 
+        prevRuns.map(r => 
+          r.run_id === activeRunId 
+            ? { ...r, status: status.status, timestamp: status.timestamp }
+            : r
+        )
+      )
+      
+      // Stop polling if run is completed or errored (check status from API response)
+      if (status.status === 'completed' || status.status === 'error') {
+        console.log(`[Polling] Run ${activeRunId} is ${status.status}, stopping polling`)
+        stopped = true
+        if (timer) clearInterval(timer)
+        return
+      }
     }
+    
     tick()
     timer = setInterval(tick, POLL_MS)
-    return () => clearInterval(timer)
-  }, [activeRunId])
+    return () => {
+      stopped = true
+      clearInterval(timer)
+    }
+  }, [activeRunId])  // REMOVED 'runs' to prevent infinite loop when we update runs
 
   // load scratchpad for selected node
   useEffect(() => {
@@ -97,30 +122,49 @@ export default function App() {
         )}
       </div>
       <div className="panes">
-        <div className="left-pane">
-          <NodeList
-            nodes={nodes}
-            nodeStates={nodeStates}
-            selectedNodeId={selectedNodeId}
-            onSelect={setSelectedNodeId}
-          />
-        </div>
-        <div className="right-pane">
-          <Scratchpad scratch={scratch} nodeId={selectedNodeId} />
-          {selectedNodeId === 'summary' && summary && (
-            <>
-              <SummaryCharts summary={summary} runId={activeRunId} />
-              <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                <button 
-                  className="dashboard-button" 
-                  onClick={() => setShowDashboard(true)}
-                >
-                  📊 Open Full Dashboard
-                </button>
+        {!activeRunId ? (
+          <div className="blank-state">
+            <div className="blank-state-content">
+              <div className="blank-state-icon">🚀</div>
+              <h2>Welcome to HR Audit POC</h2>
+              <p>Click "Submit Audit" above to start a new audit run</p>
+              <div className="blank-state-features">
+                <div className="feature">✓ Multi-source data integration</div>
+                <div className="feature">✓ Automated compliance checking</div>
+                <div className="feature">✓ Real-time policy validation</div>
+                <div className="feature">✓ Executive dashboard & insights</div>
               </div>
-            </>
-          )}
-        </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="left-pane">
+              <NodeList
+                nodes={nodes}
+                nodeStates={nodeStates}
+                selectedNodeId={selectedNodeId}
+                onSelect={setSelectedNodeId}
+                onDashboardClick={() => setShowDashboard(true)}
+              />
+            </div>
+            <div className="right-pane">
+              <Scratchpad scratch={scratch} nodeId={selectedNodeId} />
+              {selectedNodeId === 'summary' && summary && (
+                <>
+                  <SummaryCharts summary={summary} runId={activeRunId} />
+                  <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                    <button 
+                      className="dashboard-button" 
+                      onClick={() => setShowDashboard(true)}
+                    >
+                      📊 Open Full Dashboard
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
       
       {/* Dashboard Popup */}

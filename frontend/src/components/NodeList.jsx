@@ -8,7 +8,7 @@ function ProgressBar({ value=0 }) {
   )
 }
 
-export default function NodeList({ nodes, nodeStates, selectedNodeId, onSelect }) {
+export default function NodeList({ nodes, nodeStates, selectedNodeId, onSelect, onDashboardClick }) {
   const getStatusIcon = (status) => {
     if (status === 'completed') return '✓'
     if (status === 'running') return '⟳'
@@ -26,7 +26,7 @@ export default function NodeList({ nodes, nodeStates, selectedNodeId, onSelect }
     if (status !== 'completed') return null
     
     const messages = {
-      'data_integrator': '✅ Successfully pulled 1,245 records | Fetched from 4 parallel sources',
+      'data_integrator': '✅ Successfully pulled records | Fetched from 4 parallel sources',
       'normalizer': '✅ Schema standardized | All fields validated',
       'rules_engine': '✅ Business rules applied | Duplicates removed, mismatches flagged',
       'policy_check': '✅ Compliance verified | Violations reported to managers'
@@ -35,6 +35,10 @@ export default function NodeList({ nodes, nodeStates, selectedNodeId, onSelect }
     return messages[nodeId]
   }
 
+  // Check if all nodes are completed (must have at least one completed node to show button)
+  const hasAnyCompletedNode = nodes.some(n => nodeStates[n.id]?.status === 'completed')
+  const allNodesCompleted = hasAnyCompletedNode && nodes.every(n => nodeStates[n.id]?.status === 'completed')
+  
   return (
     <div className="node-list">
       {nodes.map((n, idx) => {
@@ -77,6 +81,13 @@ export default function NodeList({ nodes, nodeStates, selectedNodeId, onSelect }
           </React.Fragment>
         )
       })}
+      
+      {/* Dashboard button - appears after all nodes complete */}
+      {allNodesCompleted && onDashboardClick && (
+        <button className="dashboard-button-left-pane" onClick={onDashboardClick}>
+          📊 View Full Dashboard
+        </button>
+      )}
     </div>
   )
 }

@@ -32,9 +32,10 @@ export default function DashboardPopup({ runId, summary, onClose }) {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
+          maintainAspectRatio: true,
+          aspectRatio: 1,
           plugins: {
-            legend: { position: 'bottom', labels: { color: '#e6e8ef' } }
+            legend: { position: 'bottom', labels: { color: '#1e293b', font: { weight: '600' } } }
           }
         }
       })
@@ -57,17 +58,17 @@ export default function DashboardPopup({ runId, summary, onClose }) {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#e6e8ef' } }
+            legend: { labels: { color: '#1e293b', font: { weight: '600' } } }
           },
           scales: {
             y: { 
               beginAtZero: true,
-              ticks: { color: '#8a93a6' },
-              grid: { color: '#1f2a44' }
+              ticks: { color: '#475569', font: { weight: '500' } },
+              grid: { color: '#e2e8f0' }
             },
             x: { 
-              ticks: { color: '#8a93a6' },
-              grid: { color: '#1f2a44' }
+              ticks: { color: '#475569', font: { weight: '500' } },
+              grid: { color: '#e2e8f0' }
             }
           }
         }
@@ -93,18 +94,18 @@ export default function DashboardPopup({ runId, summary, onClose }) {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: '#e6e8ef' } }
+            legend: { labels: { color: '#1e293b', font: { weight: '600' } } }
           },
           scales: {
             y: { 
               beginAtZero: true,
               max: 100,
-              ticks: { color: '#8a93a6' },
-              grid: { color: '#1f2a44' }
+              ticks: { color: '#475569', font: { weight: '500' } },
+              grid: { color: '#e2e8f0' }
             },
             x: { 
-              ticks: { color: '#8a93a6' },
-              grid: { color: '#1f2a44' }
+              ticks: { color: '#475569', font: { weight: '500' } },
+              grid: { color: '#e2e8f0' }
             }
           }
         }
@@ -131,7 +132,7 @@ export default function DashboardPopup({ runId, summary, onClose }) {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom', labels: { color: '#e6e8ef' } }
+            legend: { position: 'bottom', labels: { color: '#1e293b', font: { weight: '600' } } }
           }
         }
       })
