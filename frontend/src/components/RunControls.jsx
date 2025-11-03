@@ -14,7 +14,7 @@ export default function RunControls({ runs, activeRunId, onSelectRun, onCreateRu
         <label>Audit Name</label>
         <input value={auditName} onChange={e=>setAuditName(e.target.value)} placeholder="e.g., Q4 Audit" />
       </div>
-      <button onClick={()=>onCreateRun(auditId, auditName)}>Start New Run</button>
+      <button onClick={()=>onCreateRun(auditId, auditName)}>Start Audit</button>
 
       <div className="group" style={{marginLeft: 'auto'}}>
         <label>Previous Runs</label>

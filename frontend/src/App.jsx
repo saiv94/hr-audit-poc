@@ -4,6 +4,7 @@ import RunControls from './components/RunControls'
 import NodeList from './components/NodeList'
 import Scratchpad from './components/Scratchpad'
 import SummaryCharts from './components/SummaryCharts'
+import DashboardPopup from './components/DashboardPopup'
 
 const POLL_MS = 1200
 
@@ -15,6 +16,7 @@ export default function App() {
   const [selectedNodeId, setSelectedNodeId] = useState('')
   const [scratch, setScratch] = useState('')
   const [summary, setSummary] = useState(null)
+  const [showDashboard, setShowDashboard] = useState(false)
 
   // load runs on mount
   useEffect(() => {
@@ -106,10 +108,29 @@ export default function App() {
         <div className="right-pane">
           <Scratchpad scratch={scratch} nodeId={selectedNodeId} />
           {selectedNodeId === 'summary' && summary && (
-            <SummaryCharts summary={summary} runId={activeRunId} />
+            <>
+              <SummaryCharts summary={summary} runId={activeRunId} />
+              <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                <button 
+                  className="dashboard-button" 
+                  onClick={() => setShowDashboard(true)}
+                >
+                  📊 Open Full Dashboard
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
+      
+      {/* Dashboard Popup */}
+      {showDashboard && summary && (
+        <DashboardPopup 
+          runId={activeRunId} 
+          summary={summary} 
+          onClose={() => setShowDashboard(false)} 
+        />
+      )}
     </div>
   )
 }
